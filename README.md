@@ -96,15 +96,30 @@ which is why the list is worth keeping accurate.
 
 ## About Humainbox
 
-Humainbox sits between a contact form and the mailbox behind it. It checks each
-submission, holds back the ones a machine wrote, and forwards the real enquiries to
-whoever should answer them. Nothing is deleted.
+**This plugin doesn't filter anything.** All it does is change where your forms send.
+The filtering happens at the address you point them at.
 
-You don't need an account for the first half of this plugin, and that half stands on its
-own — knowing where your forms deliver is worth knowing whether or not you change
-anything afterwards.
+Contact form spam used to be easy to spot: bad grammar, a wall of links, an offer of SEO
+work. Honeypots and keyword blocklists worked because the spam looked like spam. A
+growing share of it is written by a model now, and that share doesn't look like spam at
+all — it mentions your last project, names your town, and asks for fifteen minutes on
+Thursday. It gets past a blocklist because it uses no blocked words, and past a CAPTCHA
+because solving those is something you can pay for.
 
-[humainbox.com](https://humainbox.com)
+Tightening the old defences doesn't help, either. It just starts catching real enquiries,
+and a held enquiry is silent: you find out when somebody asks why you never replied.
+
+So Humainbox checks what a message says rather than how it was submitted. Junk is held
+back, real enquiries go to whoever should answer them, and nothing is ever deleted —
+anything held stays in your account. An account is free to open and free while you
+evaluate, with no card. You can also start in dry run, where everything is delivered
+exactly as it is today and you get a list at the end of the week of what *would* have
+been held, before you let it hold anything.
+
+None of that is needed for the first half of this plugin, which works on its own: knowing
+where your forms deliver is worth knowing whether or not you change anything afterwards.
+
+[humainbox.com](https://humainbox.com) · [how we measured 598 contact pages](https://humainbox.com/research/contact-pages-2026)
 
 ## Licence
 
