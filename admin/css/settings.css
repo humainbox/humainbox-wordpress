@@ -1,0 +1,158 @@
+/*
+ * The small amount of our own on one WordPress screen.
+ *
+ * ── What this file is allowed to do
+ *
+ * Every class is prefixed and every rule is additive. Nothing here restyles a core
+ * class, overrides a core colour or touches anything outside this plugin's own
+ * markup — a plugin that re-skins wp-admin is a plugin that looks wrong on the next
+ * WordPress release and reads as hijacking to a reviewer.
+ *
+ * ── And what earns its place
+ *
+ * Only things that EXPLAIN. The route drawing is the product's entire mechanic in
+ * one line, which the table below it cannot show because a table of addresses cannot
+ * show a change. The dots encode a state that was three words in three colours. The
+ * callout marks the one sentence somebody needs before pressing a button that
+ * rewrites their live forms.
+ *
+ * Nothing here sells. A settings screen with a hero on it is a brochure, and that is
+ * the fastest way to fail a plugin review.
+ */
+
+/* ── The route ─────────────────────────────────────────────────────────────── */
+
+/*
+ | ⚠️ ONE WIDTH RULE, AND IT WAS THE WHOLE PROBLEM.
+ |
+ | Seen on a screen for the first time, this page had FOUR different content widths:
+ | a 46rem route box, a full-width notice, a 46rem callout and full-width tables, all
+ | left-aligned with ragged right edges between them. Every element was individually
+ | fine and the page looked like a mistake.
+ |
+ | The rule now: BOXES SPAN THE WRAP, like every native admin card and notice. Only
+ | bare prose keeps a reading measure, because a 1900px line of text is unreadable
+ | while a 1900px table is just a table. The route's own row is capped from the
+ | inside instead — see .humainbox-link — so a full-width box does not become a
+ | diagram with three metres of connector in it.
+ */
+.humainbox-route {
+	display: flex;
+	align-items: flex-start;
+	gap: 0;
+	flex-wrap: wrap;
+	margin: 0 0 1.5em;
+	padding: 1.25em 1.5em;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #236866;
+	border-radius: 2px;
+}
+
+.humainbox-node {
+	flex: 0 1 auto;
+	min-width: 7.5rem;
+	text-align: center;
+}
+
+.humainbox-node-mark svg { margin-right: 0; vertical-align: 0; }
+
+.humainbox-node-mark {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 10px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	color: #50575e;
+}
+
+/* The one node that is us. Spent once, on the node the whole screen is about. */
+.humainbox-node-ours .humainbox-node-mark svg { margin-right: 0; vertical-align: 0; }
+
+.humainbox-node-mark {
+	background: #eef7f6;
+	border-color: #aed8d3;
+}
+
+.humainbox-node-name {
+	display: block;
+	margin-top: .5em;
+	font-weight: 600;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.humainbox-node-note {
+	display: block;
+	margin-top: .15em;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #646970;
+	word-break: break-word;
+}
+
+/* The line between two nodes. Drawn at the height of the marks, not of the block. */
+/* Capped, so the row stays a diagram at any container width rather than three
+   nodes pushed to the corners of a wide screen. */
+.humainbox-link {
+	flex: 0 1 5rem;
+	min-width: 1.5rem;
+	max-width: 5rem;
+	height: 2px;
+	margin-top: 23px;
+	background: #dcdcde;
+}
+
+.humainbox-link-live {
+	background: linear-gradient(to right, #aed8d3, #236866);
+}
+
+/* ── State, as a shape and not only as a word ──────────────────────────────── */
+
+.humainbox-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-right: 6px;
+	border-radius: 50%;
+	vertical-align: 1px;
+	background: #c3c4c7;
+}
+
+.humainbox-dot-live { background: #00a32a; }
+.humainbox-dot-none { background: #d63638; }
+.humainbox-dot-held { background: #dba617; }
+
+/* ── The sentence somebody needs before pressing the button ────────────────── */
+
+.humainbox-assure {
+	display: flex;
+	gap: .75em;
+	align-items: flex-start;
+	margin: 0 0 1.25em;
+	padding: .9em 1.1em;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	line-height: 1.6;
+}
+
+.humainbox-assure svg { flex: 0 0 auto; margin-top: 2px; color: #236866; }
+
+/* A form that tells nobody. Said loudly because it is the most expensive thing a
+   contact form can quietly be. */
+.humainbox-nobody { color: #b32d2e; font-weight: 600; }
+
+.humainbox-left-alone { color: #646970; }
+
+/* The one thing that still gets a measure: running text. A 1900px line is
+   unreadable; a 1900px table is a table. */
+.humainbox-prose { max-width: 46rem; }
+
+@media screen and (max-width: 782px) {
+	.humainbox-link { flex-basis: 100%; width: 100%; margin: .5em 0; }
+	.humainbox-node { flex-basis: 100%; text-align: left; }
+}

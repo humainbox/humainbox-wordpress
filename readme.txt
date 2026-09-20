@@ -8,22 +8,50 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-See where every contact form on this site delivers, point them all at one address in a click, and keep a copy of the originals so you can put them back.
+See where every contact form on your site sends its notifications, then point them at one address to stop spam without losing real leads.
 
 == Description ==
 
-A site picks up forms over the years. One in the theme, one a plugin added, one the
-last agency built, each with its own notification settings on its own screen. When you
-need to change where enquiries go, "change the recipient address" turns into finding
-twelve settings pages and hoping you found them all.
+**Two things, and the first one is free, works on its own, and needs no account.**
 
-This plugin lists them in one table: every form, from every supported form plugin, and
-the address each one currently delivers to. That part works on its own and needs no
-account anywhere.
+= 1. Find out where your forms actually send =
+
+A site picks up forms over the years. One in the theme, one a plugin added, one the
+last agency built, each with its own notification settings on its own screen. Nobody
+remembers which is which, and "who gets the enquiries from that form" is a question
+most site owners cannot answer without opening a dozen screens.
+
+This plugin answers it in one table: every form, from every supported form plugin, and
+the address each one currently sends its notifications to. It makes no network
+requests, stores nothing but what you type, and needs no account with anybody.
+
+It will also tell you when a form notifies **nobody** — a contact form that quietly
+accepts submissions and tells no one is the most expensive thing on a website, and it
+is commoner than it sounds.
+
+= 2. Point them somewhere better, in one action =
+
+If your forms are collecting more spam than leads, the usual fixes make the
+problem worse in a way nobody measures: a CAPTCHA turns visitors away and an
+aggressive filter starts eating real ones, and a lost lead is silent. You only find out
+when somebody asks why you never replied.
+
+Humainbox is a service that sits between a contact form and the mailbox behind it. It
+checks each submission, holds back the ones written by a machine, and forwards the real
+enquiries to whoever should answer them. Nothing goes on your site: you change one
+field — the address a form sends its notifications to — and this plugin changes that
+field on as many forms as you like at once, keeping a copy of every original.
 
 If you use Humainbox, it will also point the forms you choose at your Humainbox address
 in one action — and keep a copy of what each one said before, so you can put them back
 just as easily.
+
+= Changing the address does not start blocking anything =
+
+A new Humainbox inbox begins in dry run. Every submission is forwarded exactly as it is
+today while the service records what it would have held, and you decide after a week of
+your own mail. So pointing a live form at it is a change you can watch before it does
+anything — and the address that form used before is saved here either way.
 
 = It is not part of your site's request handling =
 
@@ -45,7 +73,7 @@ supported".
 = What Humainbox is =
 
 Humainbox is a paid service that sits between a contact form and the mailbox behind it.
-It reads each submission, holds the ones written by a machine, and forwards the real
+It checks each submission, holds the ones written by a machine, and forwards the real
 enquiries to whoever should answer them. This plugin is a convenience for setting it up
 across several forms at once; the service works exactly the same if you change the
 addresses by hand.
@@ -70,14 +98,23 @@ Humainbox service handles the message under its own terms and privacy policy:
 
 = Do I need a Humainbox account? =
 
-Not for the inventory. Listing your forms and seeing where each one delivers works with
-no account and no address entered. You need an address only to point forms at one.
+Not for the inventory. Listing your forms and seeing where each one sends works with no
+account, no address entered and no network request of any kind. You need an address
+only if you want to point forms at one.
+
+= What does a Humainbox account cost? =
+
+It is free to open and free while you evaluate, with no card. There are paid plans for
+larger sites; what they cost is on humainbox.com and this plugin does not ask you for
+anything. Nothing on this screen changes until you paste in an address and press a
+button.
 
 = What happens to my original addresses? =
 
-The first time this plugin changes a form, it records what that form delivered to
-beforehand. Those are shown on the settings screen in plain text and can be restored
-with one action.
+The first time this plugin changes a form, it records every notification on it and
+where each one was addressed. Those are shown on the settings screen and can be put
+back with one action — each notification to exactly the address it had, not to a
+summary of them.
 
 = What happens if I delete the plugin? =
 
@@ -88,18 +125,30 @@ it gone, restore your forms first and the record clears itself.
 
 = Does it change every notification on a form? =
 
-For WPForms, yes — every notification on the form, because leaving one behind would
-send an unfiltered copy as well.
+Only the ones addressed to a fixed address — that, or the form plugin's own tag for
+your site's admin address, which always resolves to the same place.
 
-For Gravity Forms, only notifications addressed to a plain email address. Notifications
-routed to a form field or by conditional rules are left alone: those send to whatever
-the visitor typed, and overwriting them would break a "send me a copy" confirmation
-rather than redirect it.
+Notifications addressed with a tag that is worked out for each submission are left
+exactly as they are, in all three plugins. Those are the "a copy of your enquiry"
+mails that go back to the person who filled the form in, and notifications routed to
+the author of whatever they were enquiring about. Overwriting one of those does not
+redirect it to you — it sends you somebody else's receipt and sends them nothing.
+
+If every notification on a form is addressed that way, the form is listed with the
+reason and no checkbox, rather than offered and then reported as a failure.
 
 = Will it work with Elementor, Ninja Forms, Fluent Forms? =
 
 Not yet. Those store notification settings differently and this version does not touch
-them rather than touch them badly.
+them rather than touch them badly. Pointing them at an address by hand works exactly the
+same — it is one field in each of their own notification settings, and the menu path for
+each is written out at https://humainbox.com/integrations
+
+= One of my forms says it notifies nobody =
+
+Then it does. A form with no recipient address accepts submissions and tells no one,
+which is the most expensive thing a contact form can do quietly. That is worth fixing
+whether or not you ever use Humainbox.
 
 == Changelog ==
 

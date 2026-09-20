@@ -38,10 +38,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'humainbox_settings' );
 
 if ( is_multisite() ) {
-	$sites = get_sites( array( 'fields' => 'ids', 'number' => 0 ) );
+	$humainbox_sites = get_sites( array( 'fields' => 'ids', 'number' => 0 ) );
 
-	foreach ( $sites as $site_id ) {
-		switch_to_blog( $site_id );
+	foreach ( $humainbox_sites as $humainbox_site_id ) {
+		switch_to_blog( $humainbox_site_id );
 		delete_option( 'humainbox_settings' );
 		restore_current_blog();
 	}

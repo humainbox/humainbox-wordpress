@@ -32,6 +32,23 @@ foreach ( $it as $file ) {
 
 sort( $files );
 
+/*
+ | The newest WordPress that exists, from api.wordpress.org, checked by hand on the day
+ | of submission. A constant rather than a network call: this script must work with no
+ | internet, and a check that silently passes when it cannot reach wordpress.org is not
+ | a check.
+ |
+ | ⚠️ READ IT FROM WORDPRESS.ORG, NEVER FROM A LOCAL INSTALL. This was briefly set to
+ | 6.9 because that was the newest WordPress on the machine, and the readme's correct
+ | "Tested up to: 7.1" was "corrected" to match it. Local installs lag — that is what
+ | an out-of-date site IS — so taking the ceiling from one turns the newest laptop in
+ | the room into the definition of current, and the check then fails the one value
+ | that was right.
+ |
+ |   curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r .offers[0].current
+ */
+const HUMAINBOX_NEWEST_WP = '7.1';
+
 $problems = array();
 
 /** Report one failure. */
@@ -72,8 +89,20 @@ foreach ( $files as $path ) {
 			continue;
 		}
 
-		// isset() alone reads nothing, so it is not a use that needs unslashing.
-		$reads = preg_replace( '/isset\(\s*\$_(POST|GET|REQUEST|COOKIE)\s*\[[^\]]*\]\s*\)/', '', $line );
+		/*
+		 * Tests that inspect SHAPE rather than value read nothing that slashes could
+		 * corrupt, so none of them is a use that needs unslashing.
+		 *
+		 * isset() was already here; is_array() was not, and the first line in this
+		 * plugin to guard a superglobal properly — isset() || ! is_array() — was
+		 * reported by this check for it. A rule that flags the correct form of the
+		 * thing it is asking for teaches people to write the incorrect one.
+		 */
+		$reads = preg_replace(
+			'/\b(isset|empty|is_array|is_string|count)\(\s*\$_(POST|GET|REQUEST|COOKIE)\s*\[[^\]]*\]\s*\)/',
+			'',
+			$line
+		);
 
 		if ( preg_match( '/\$_(POST|GET|REQUEST|COOKIE)\s*\[/', (string) $reads )
 			&& ! str_contains( (string) $reads, 'wp_unslash' ) ) {
@@ -214,20 +243,131 @@ if ( ( $tag[1] ?? 'a' ) !== ( $version[1] ?? 'b' ) ) {
 	$fail( 'version', sprintf( 'readme says %s, plugin header says %s', $tag[1] ?? '?', $version[1] ?? '?' ) );
 }
 
+/*
+ | ── The short description, which has a hard limit nobody remembers.
+ |
+ | wordpress.org truncates it at 150 characters and the reviewer sees the stub. Ours
+ | was 152 and had been for as long as the file existed — two characters, invisible to
+ | every pair of eyes that read the sentence and obvious to the one script that counts
+ | it. This is exactly the class of thing a pre-submission check is for.
+ */
+$lines = preg_split( '/\R/', $readme );
+$short = '';
+
+foreach ( $lines as $i => $line ) {
+	// The first non-empty line after the header block, which ends at the last
+	// "Key: value" line before a blank one.
+	if ( $i > 0 && '' !== trim( $line ) && ! preg_match( '/^[A-Z][A-Za-z ]+:/', $line ) && ! str_starts_with( trim( $line ), '=' ) ) {
+		$short = trim( $line );
+		break;
+	}
+}
+
+if ( '' === $short ) {
+	$fail( 'readme', 'no short description found' );
+} elseif ( strlen( $short ) > 150 ) {
+	$fail( 'readme', sprintf( 'short description is %d characters, and wordpress.org cuts it at 150', strlen( $short ) ) );
+}
+
+/*
+ | ── A "Tested up to" from the future.
+ |
+ | It read 7.1 while the newest WordPress anybody could install was 6.9. Being behind
+ | reads as abandoned; being AHEAD reads as a value nobody checked, which is worse,
+ | because it is a claim to have tested against something that does not exist.
+ |
+ | The ceiling is bumped by hand, deliberately: an automatic one would be a number
+ | nobody has ever tested against, which is the thing this is trying to prevent.
+ */
+if ( preg_match( '/^Tested up to:\s*([\d.]+)/m', $readme, $tested ) ) {
+	if ( version_compare( $tested[1], HUMAINBOX_NEWEST_WP, '>' ) ) {
+		$fail( 'readme', sprintf( 'Tested up to says %s, and the newest WordPress is %s', $tested[1], HUMAINBOX_NEWEST_WP ) );
+	}
+
+	// And the failure this was originally written for: a ceiling left behind until the
+	// listing reads as abandoned before anybody opens a file.
+	if ( version_compare( $tested[1], HUMAINBOX_NEWEST_WP, '<' ) ) {
+		$fail( 'readme', sprintf( 'Tested up to says %s; the newest WordPress is %s — test on it and bump both', $tested[1], HUMAINBOX_NEWEST_WP ) );
+	}
+}
+
+/*
+ | ── An asset that ships and is never loaded.
+ |
+ | ⚠️ THIS HAPPENED. admin/js/settings.js and admin/css/settings.css were both in the
+ | plugin and neither was enqueued: the method that registered them was lost to a
+ | `git checkout` run to undo a deliberate test mutation, and nothing noticed. The
+ | select-all did not select, the confirm before rewriting somebody's live forms did
+ | not confirm, and the screen rendered unstyled — all of it looking exactly like a
+ | plugin that works.
+ |
+ | The file being present is not the feature. The feature is the file being loaded.
+ */
+foreach ( array( 'admin/js/settings.js', 'admin/css/settings.css' ) as $asset ) {
+	if ( ! file_exists( $root . '/' . $asset ) ) {
+		continue;
+	}
+
+	$loaded = false;
+
+	foreach ( $files as $path ) {
+		if ( str_contains( (string) file_get_contents( $path ), $asset ) ) {
+			$loaded = true;
+			break;
+		}
+	}
+
+	if ( ! $loaded ) {
+		$fail( 'dead asset', $asset . ' ships and nothing enqueues it' );
+	}
+}
+
 // ── The service disclosure. A plugin backed by a paid service is fine; one that does
 //    not say so is rejected, and rightly.
 if ( ! str_contains( $readme, '== External services ==' ) ) {
 	$fail( 'disclosure', 'readme has no External services section' );
 }
 
-// ── Nothing may reach the front end. No enqueues outside admin, no shortcodes, no
-//    the_content filters — this plugin is a configurator.
+/*
+ | ── Nothing may reach the front end. This plugin is a configurator: it writes a
+ |    setting and gets out of the way.
+ |
+ | ⚠️ THE RULE IS "NO ENQUEUE OUTSIDE ADMIN", WHICH IS WHAT THE COMMENT HERE ALWAYS
+ | SAID AND NOT WHAT THE CODE CHECKED. It banned wp_enqueue_script outright, so the
+ | first admin-only, screen-guarded script this plugin ever needed came back as a
+ | front-end violation. A check that is stricter than the rule it names is one that
+ | gets argued with and then disabled, and the next thing disabled with it is the part
+ | that was right.
+ |
+ | Shortcodes and the_content stay banned unconditionally: those ARE the front end,
+ | there is no guarded version of them.
+ */
 foreach ( $files as $path ) {
 	$source = (string) file_get_contents( $path );
 
-	foreach ( array( 'wp_enqueue_script', 'wp_enqueue_style', 'add_shortcode', "add_filter( 'the_content'" ) as $banned ) {
+	foreach ( array( 'add_shortcode', "add_filter( 'the_content'" ) as $banned ) {
 		if ( str_contains( $source, $banned ) ) {
 			$fail( 'front end', $rel( $path ) . " uses {$banned}" );
+		}
+	}
+
+	foreach ( array( 'wp_enqueue_script', 'wp_enqueue_style' ) as $enqueue ) {
+		if ( ! str_contains( $source, $enqueue ) ) {
+			continue;
+		}
+
+		if ( ! str_contains( $source, "add_action( 'admin_enqueue_scripts'" ) ) {
+			$fail( 'front end', $rel( $path ) . " calls {$enqueue} without hooking admin_enqueue_scripts" );
+		}
+
+		/*
+		 | And the second half of the real complaint. Hooking admin_enqueue_scripts is
+		 | not enough on its own: it fires on EVERY admin page, so a plugin that does
+		 | not check which one is slowing down somebody else's dashboard for a feature
+		 | that is not on it. That is one of the commonest reasons a review comes back.
+		 */
+		if ( ! str_contains( $source, '$hook' ) && ! str_contains( $source, 'get_current_screen' ) ) {
+			$fail( 'front end', $rel( $path ) . " enqueues on every admin page — check the screen first" );
 		}
 	}
 }

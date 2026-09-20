@@ -15,7 +15,23 @@
  * @package Humainbox
  */
 
+// Called directly? There is nothing here for you.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+
 /*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ THE ABSPATH GUARD IS ABOVE THIS COMMENT, NOT BELOW IT, AND THAT IS DELIBERATE.
+ *
+ * Plugin Check reads only the FIRST FIFTY LINES of a file looking for it. This
+ * rationale runs to about sixty, so with the guard underneath it the check reported
+ * "PHP file should prevent direct access" — an ERROR, on the main plugin file, about
+ * a guard that was present and correct four lines further down than the tool looks.
+ *
+ * Correct PHP in the wrong place is still a rejected submission. Prose after the
+ * guard costs nothing; prose before it costs a review round trip.
  * ─────────────────────────────────────────────────────────────────────────────
  * WHAT THIS PLUGIN IS, AND WHY IT IS NOT A CONTRADICTION
  *
@@ -45,7 +61,9 @@
  *    of output, never earlier.
  *  - No database queries. The form plugins' own public APIs are used, so a change
  *    goes through their validation and their caches instead of behind them.
- *  - No HTTP except through wp_remote_*, and none at all unless the user asks.
+ *  - NO HTTP AT ALL. Not to us, not to anywhere, not once. `wp_remote_` appears in
+ *    this sentence and nowhere else in the plugin — which is a claim you check
+ *    with grep rather than take on trust. README.md gives the exact command.
  *  - Nothing is ever printed on the public site. No credits, no links, no styles.
  *  - No admin notices outside this plugin's own screen. Nobody is nagged.
  *  - No account is required for the parts that work without one, and the readme
@@ -53,11 +71,6 @@
  *
  * @link https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/
  */
-
-// Called directly? There is nothing here for you.
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
 
 define( 'HUMAINBOX_VERSION', '1.0.0' );
 define( 'HUMAINBOX_FILE', __FILE__ );
@@ -81,6 +94,25 @@ define( 'HUMAINBOX_OPTION', 'humainbox_settings' );
  * first — see Humainbox_Forms::apply().
  */
 define( 'HUMAINBOX_BACKUP_OPTION', 'humainbox_original_recipients' );
+
+/**
+ * The only domain this plugin will point a form at.
+ *
+ * ⚠️ A VALID EMAIL ADDRESS IS THE DANGEROUS INPUT HERE, NOT A BROKEN ONE.
+ *
+ * "fddfafsf" never gets past is_email(). "fddfafsf@gmail.com" does — and saving
+ * it would point every contact form on the site at an address that is not the
+ * administrator's, not ours, and possibly somebody else's. The enquiries stop
+ * arriving and nothing on screen says why, because from the plugin's side the
+ * save succeeded.
+ *
+ * So the question is not "is this an email address" but "is this OUR address".
+ * A subdomain is accepted rather than the exact host in use today, because a
+ * plugin installed once sits on a site for years: if the inbox domain ever
+ * changes, an old copy must not start refusing new addresses.
+ */
+define( 'HUMAINBOX_HOST', 'humainbox.com' );
+
 
 require_once HUMAINBOX_PATH . 'includes/class-humainbox-adapter.php';
 require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-cf7-adapter.php';

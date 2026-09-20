@@ -21,6 +21,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Humainbox_Cf7_Adapter extends Humainbox_Adapter {
 
+	/**
+	 * The one mail tag that means the same thing on every submission.
+	 *
+	 * ⚠️ WITHOUT THIS EXCEPTION THE PLUGIN DOES NOTHING ON A TYPICAL SITE. Contact Form
+	 * 7 ships "Contact form 1" delivering to [_site_admin_email], so refusing every
+	 * bracketed recipient refuses the single commonest case on the web — and the one
+	 * the customer most wants changed, since "the site admin gets the enquiries" is
+	 * precisely the arrangement they came here to replace.
+	 *
+	 * It is safe because it is static: it resolves to the site's admin address and to
+	 * nothing else, whoever submits and from wherever. [_post_author_email] and every
+	 * field tag are worked out per submission and stay refused.
+	 */
+	const STATIC_TAGS = array( '[_site_admin_email]' );
+
 	public function slug() {
 		return 'cf7';
 	}
@@ -46,12 +61,16 @@ class Humainbox_Cf7_Adapter extends Humainbox_Adapter {
 		 * and respects anything it does to the query.
 		 */
 		foreach ( WPCF7_ContactForm::find( array( 'posts_per_page' => 200 ) ) as $form ) {
-			$mail = $form->prop( 'mail' );
+			$mail      = $form->prop( 'mail' );
+			$recipient = isset( $mail['recipient'] ) ? (string) $mail['recipient'] : '';
+			$fixed     = $this->may_be_repointed( $recipient, self::STATIC_TAGS );
 
 			$out[] = array(
-				'id'        => (string) $form->id(),
-				'title'     => (string) $form->title(),
-				'recipient' => isset( $mail['recipient'] ) ? (string) $mail['recipient'] : '',
+				'id'         => (string) $form->id(),
+				'title'      => (string) $form->title(),
+				'recipient'  => $recipient,
+				'changeable' => $fixed,
+				'reason'     => $fixed ? '' : __( 'Delivers to a mail tag worked out for each submission — change this one in Contact Form 7, where you can see the whole template.', 'humainbox' ),
 			);
 		}
 
@@ -75,8 +94,63 @@ class Humainbox_Cf7_Adapter extends Humainbox_Adapter {
 			return false;
 		}
 
+		/*
+		 | ⚠️ REFUSED HERE AS WELL AS HIDDEN IN THE INTERFACE.
+		 |
+		 | The screen gives a mail-tag recipient no checkbox, so this should be
+		 | unreachable — and "should be unreachable" is exactly the guard that is worth
+		 | having, because the token arrives in a POST body and the form could have
+		 | changed between the page being drawn and the button being pressed.
+		 |
+		 | A real site made this concrete: [custom-post-author-email-shortcode] resolves
+		 | to the author of the listing being enquired about. Replacing it with one
+		 | address sends every listing's enquiries to the wrong person, and nothing
+		 | anywhere reports it.
+		 */
+		if ( ! $this->may_be_repointed( isset( $mail['recipient'] ) ? $mail['recipient'] : '', self::STATIC_TAGS ) ) {
+			return false;
+		}
+
 		// One key. Everything else in the template is the site owner's work.
 		$mail['recipient'] = $recipient;
+
+		$form->set_properties( array( 'mail' => $mail ) );
+
+		return (bool) $form->save();
+	}
+
+	public function snapshot( $form_id ) {
+		$form = WPCF7_ContactForm::get_instance( absint( $form_id ) );
+
+		if ( ! $form ) {
+			return array();
+		}
+
+		$mail = $form->prop( 'mail' );
+
+		return array( 'recipient' => isset( $mail['recipient'] ) ? (string) $mail['recipient'] : '' );
+	}
+
+	public function apply_snapshot( $form_id, $snapshot ) {
+		if ( ! isset( $snapshot['recipient'] ) ) {
+			return false;
+		}
+
+		$form = WPCF7_ContactForm::get_instance( absint( $form_id ) );
+
+		if ( ! $form ) {
+			return false;
+		}
+
+		$mail = $form->prop( 'mail' );
+
+		if ( ! is_array( $mail ) ) {
+			return false;
+		}
+
+		// Putting a mail tag BACK is allowed; only changing one is refused. This is
+		// restoring what the site owner had, not choosing it for them.
+		$mail['recipient'] = (string) $snapshot['recipient'];
 
 		$form->set_properties( array( 'mail' => $mail ) );
 

@@ -97,7 +97,18 @@ class Humainbox_Forms {
 			// An empty original is still an original — a form that delivered nowhere
 			// is a fact worth being able to restore to.
 			$backup[ $key ] = array(
+				// For the screen: one readable line saying where it used to go.
 				'recipient' => $current,
+				/*
+				 | ⚠️ AND THE PART THE RESTORE ACTUALLY USES.
+				 |
+				 | 'recipient' is a DISPLAY string — "{admin_email}, {field_id=\"1\"}"
+				 | for a form with two notifications. Restoring from it wrote that
+				 | whole joined line into the first notification as one address, and
+				 | then deleted the backup: the undo destroyed the only record of what
+				 | it was undoing. See Humainbox_Adapter::snapshot().
+				 */
+				'snapshot'  => $adapter->snapshot( $form_id ),
 				'title'     => self::title( $adapter, $form_id ),
 				'saved_at'  => time(),
 			);
@@ -128,7 +139,17 @@ class Humainbox_Forms {
 			return false;
 		}
 
-		if ( ! $adapter->set_recipient( $form_id, $backup[ $key ]['recipient'] ) ) {
+		/*
+		 | A backup written before snapshots existed has none. Falling back to the old
+		 | behaviour would reintroduce the corruption, so it is refused instead — the
+		 | record stays, and the screen reports a form it could not restore rather than
+		 | quietly mangling it.
+		 */
+		if ( empty( $backup[ $key ]['snapshot'] ) || ! is_array( $backup[ $key ]['snapshot'] ) ) {
+			return false;
+		}
+
+		if ( ! $adapter->apply_snapshot( $form_id, $backup[ $key ]['snapshot'] ) ) {
 			return false;
 		}
 
