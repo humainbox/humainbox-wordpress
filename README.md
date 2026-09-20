@@ -1,97 +1,87 @@
+<img src="assets/banner-772x250.png" alt="Humainbox" width="772">
+
 # Humainbox for WordPress
 
-See where every contact form on a WordPress site actually delivers, then point them all
-at one address — and put the originals back whenever you like.
+Shows you where every contact form on your site sends its notifications, and lets you
+point them all at one address.
 
-The first half is free, needs no account, and is the part most sites have never checked:
-**a list of every form on the site and the address each one currently notifies.** Forms
-accumulate. The address in one of them was typed years ago by whoever built the site, and
-nothing since has re-read it.
+A site picks up forms over the years. One in the theme, one a plugin added, one the last
+agency built — each with its own notification settings on its own screen. This plugin puts
+them in a single table so you can see, in one go, who actually gets the enquiries.
 
----
+## What it does
 
-## Do not take the privacy claims on trust — check them
+- **Lists every form and the address it notifies.** No account, nothing leaves your site.
+- **Repoints the ones you pick.** Tick them, paste an address, apply.
+- **Puts them back.** Every original address is saved before anything changes.
 
-This plugin makes two promises that matter, and both of them are negative claims. A
-negative claim cannot be demonstrated by a marketing page. It can be read out of source
-in about a minute, which is the entire reason this repository is public.
+It also flags forms that notify **nobody**, which is commoner than it sounds and a lot
+more expensive.
 
-**1. It makes no network requests. None, ever, to anywhere — including to us.**
+## Works with
+
+Contact Form 7, WPForms and Gravity Forms. Each has its own adapter in
+`includes/adapters/`, and they go through that plugin's public API rather than writing to
+the database directly.
+
+Some recipients can't be changed safely, and those are refused instead of overwritten.
+Contact Form 7 is the one to watch: its recipient is often dynamic —
+`[_site_admin_email]`, or a shortcode that resolves to the author of whatever listing is
+on screen. Overwrite one of those and every enquiry goes to the wrong person, on every
+form, with nothing to tell you it happened.
+
+## Requirements
+
+WordPress 6.2 or newer, PHP 7.4 or newer, and one of the three form plugins above.
+
+## Installing
+
+From wordpress.org, install it like any other plugin. From here, run `bin/build.sh` and
+upload the zip it writes, or clone straight into `wp-content/plugins/`.
+
+Settings live under **Settings → Humainbox**.
+
+## What it doesn't do, and how to check
+
+Three things, and you can confirm each one in about ten seconds.
+
+### It never makes a network request
 
 ```sh
-grep -rnE "wp_remote_|curl_init|curl_exec|fsockopen|file_get_contents|fopen" --include="*.php" \
-  humainbox.php includes/ admin/
+grep -rnE "wp_remote_|curl_init|curl_exec|fsockopen|file_get_contents|fopen" \
+  --include="*.php" humainbox.php includes/ admin/
 ```
 
-Expect one hit: a comment in `humainbox.php` saying there is no HTTP. Nothing else. The
-plugin never phones home, never checks a licence, never reports an install, and never
-sends your form addresses anywhere. It cannot, because there is nothing in it that could.
+You'll get one hit, and it's a comment. That's the lot — no licence check, no usage ping,
+no telemetry. Your form addresses never go anywhere, including to us.
 
-**2. It prints nothing on the public site, and adds nothing to any page a visitor loads.**
+### It never touches the front end
 
 ```sh
 grep -rnoE "add_(action|filter)\( *'[a-z_]+'" --include="*.php" humainbox.php includes/ admin/
 ```
 
-Every hook that comes back is an admin one — `admin_menu`, `admin_enqueue_scripts`,
-`admin_post_*`, `plugins_loaded`, `plugin_action_links_`. There is no `the_content`
-filter, no shortcode, no `wp_enqueue_scripts`, no front-end output of any kind. A visitor
-to the site cannot tell the plugin is installed.
+Every hook that comes back is an admin one. There's no `the_content` filter, no shortcode,
+and nothing enqueued on public pages. A visitor can't tell it's installed.
 
-**3. It writes exactly two options, and here they are.**
+### It stores two options, and that's all
 
 ```sh
 grep -rnoE "(update|add|delete)_option\( *[A-Z_]+" --include="*.php" humainbox.php includes/ admin/
 ```
 
-| Option | Holds |
+| Option | What's in it |
 | --- | --- |
-| `humainbox_settings` | the one address you saved |
-| `humainbox_original_recipients` | a snapshot of what each form sent to before you changed it |
+| `humainbox_settings` | the address you saved |
+| `humainbox_original_recipients` | what each form sent to before you changed it |
 
-The second one is the safety net, and it is why Restore works. Nothing writes to a form
-without writing here first — see `Humainbox_Forms::apply()`.
+The second one is what makes Restore work, so nothing is written to a form without being
+written there first. If that snapshot is missing, Restore refuses rather than guessing —
+an early version rebuilt the address from a display string and mangled forms that had more
+than one notification.
 
-`bin/review-check.php` enforces all three of these in CI-ish fashion before a release is
-built: `curl_init`, `curl_exec`, `fsockopen`, `add_shortcode` and
-`add_filter( 'the_content' )` are refused outright.
-
----
-
-## What it does
-
-**Find out where your forms send.** One screen, every form the site has, and the address
-each currently notifies. Free, no account, nothing leaves the site.
-
-**Point them at one address.** Tick the forms, paste a Humainbox address, apply. The
-original address of each is saved first.
-
-**Put them back.** Restore returns every form to the exact address it had. It refuses to
-run if the snapshot is missing rather than guessing — an early version reconstructed the
-address from a display string and corrupted multi-notification forms.
-
-### Supported form plugins
-
-| Plugin | Adapter |
-| --- | --- |
-| Contact Form 7 | `includes/adapters/class-humainbox-cf7-adapter.php` |
-| WPForms | `includes/adapters/class-humainbox-wpforms-adapter.php` |
-| Gravity Forms | `includes/adapters/class-humainbox-gravity-adapter.php` |
-
-Each adapter reports whether a form's recipient can safely be changed, and **refuses the
-ones that cannot.** That refusal is not a formality. Contact Form 7 recipients are
-frequently dynamic — `[_site_admin_email]`, or a shortcode that resolves to the author of
-the listing being viewed. Overwriting one of those would send every enquiry to the wrong
-person, on every form, silently. The adapter will not touch a recipient that is not a
-fixed address.
-
----
-
-## Requirements
-
-- WordPress 6.2 or newer
-- PHP 7.4 or newer
-- One of the three form plugins above
+`bin/review-check.php` blocks `curl_init`, `curl_exec`, `fsockopen`, `add_shortcode` and
+`add_filter( 'the_content' )` outright, so a release carrying any of them won't build.
 
 ## Building a release
 
@@ -99,24 +89,23 @@ fixed address.
 bin/build.sh
 ```
 
-Produces `humainbox.zip` — the files that do the work, plus `readme.txt` and `LICENSE`.
-Everything in `.distignore` stays out: the developer CLI, this README, the listing
-artwork. That file is worth reading; between them those exclusions accounted for 41 of
-the 44 findings the first Plugin Check run produced.
+Writes `humainbox.zip`: the plugin files, `readme.txt` and `LICENSE`. Anything listed in
+`.distignore` stays out — this README, the dev script, the banner and icon. Those files
+between them accounted for 41 of the 44 findings the first Plugin Check run turned up,
+which is why the list is worth keeping accurate.
 
----
+## About Humainbox
 
-## About the service
+Humainbox sits between a contact form and the mailbox behind it. It checks each
+submission, holds back the ones a machine wrote, and forwards the real enquiries to
+whoever should answer them. Nothing is deleted.
 
-Humainbox filters contact-form submissions: machine-written junk is held back, real
-enquiries are forwarded to whoever should answer them, and nothing is ever deleted.
+You don't need an account for the first half of this plugin, and that half stands on its
+own — knowing where your forms deliver is worth knowing whether or not you change
+anything afterwards.
 
-You do **not** need an account to use the audit half of this plugin, and it is worth
-saying plainly that the audit is the half most sites benefit from — knowing where your
-forms deliver is useful whether or not you ever change the address.
-
-https://humainbox.com
+[humainbox.com](https://humainbox.com)
 
 ## Licence
 
-GPL-2.0-or-later. See `LICENSE`.
+GPL-2.0-or-later. See [LICENSE](LICENSE).
