@@ -70,7 +70,18 @@ abstract class Humainbox_Adapter {
 	 * this plugin was run against a real site, where three of six forms turned out to
 	 * deliver to a mail tag rather than to an address.
 	 *
-	 * @return array<int, array{id:string,title:string,recipient:string,changeable:bool,reason:string}>
+	 * ⚠️ AND EACH ONE SAYS WHETHER IT ALREADY GOES TO US, which the screen cannot work
+	 * out from 'recipient'. That is a display line joining every notification, and a
+	 * WPForms form pointed at us still reads "…@in.humainbox.com, {field_id="1"}"
+	 * because its visitor-copy is rightly left alone. Comparing that line to the
+	 * saved address reported a form this plugin had just changed as "Unchanged", and
+	 * drew the route as "nothing routed yet", on the one screen somebody checks to
+	 * see whether it worked. See routing().
+	 *
+	 * 'notes' are the things about a form that change what pointing it at us MEANS:
+	 * several people receiving it today, a Cc that bypasses the filter.
+	 *
+	 * @return array<int, array{id:string,title:string,recipient:string,changeable:bool,reason:string,routing:string,notes:string[]}>
 	 */
 	abstract public function forms();
 
@@ -113,9 +124,18 @@ abstract class Humainbox_Adapter {
 	/**
 	 * Put a form back to a snapshot taken earlier.
 	 *
+	 * ⚠️ ONLY WHAT STILL GOES TO US IS PUT BACK.
+	 *
+	 * The snapshot can be months old. If somebody has since changed a notification
+	 * by hand in the form plugin — a new person, a new address — that is a newer
+	 * decision than ours, and writing the old address over it would undo their
+	 * work in the name of undoing ours. A notification is restored only while it
+	 * still delivers to a Humainbox address and nothing else; see still_ours().
+	 *
 	 * @param string               $form_id  Form identifier.
 	 * @param array<string, mixed> $snapshot As returned by snapshot().
-	 * @return bool
+	 * @return int|false How many notifications were put back — 0 when none still went
+	 *                   to us, so there was nothing to undo — or false if saving failed.
 	 */
 	abstract public function apply_snapshot( $form_id, $snapshot );
 
@@ -166,5 +186,132 @@ abstract class Humainbox_Adapter {
 		}
 
 		return $this->is_a_fixed_address( $recipient );
+	}
+
+	/**
+	 * The separate addresses in one recipient field.
+	 *
+	 * Every one of the three plugins accepts a comma-separated list there.
+	 *
+	 * @param string $recipient Whatever the form plugin stores.
+	 * @return string[]
+	 */
+	protected function addresses_in( $recipient ) {
+		return array_values( array_filter( array_map( 'trim', explode( ',', (string) $recipient ) ), 'strlen' ) );
+	}
+
+	/**
+	 * How much of a form's mail already goes to us.
+	 *
+	 * Asked only of the notifications this plugin would change: a visitor-copy
+	 * addressed with a field tag is never ours and never will be, and counting it
+	 * would leave every such form permanently "partly" routed.
+	 *
+	 * Any Humainbox address counts, not only the one saved on this screen today. A
+	 * form pointed at last year's inbox is routed through us; calling it
+	 * "Unchanged" would invite pointing it again and hide where it really goes.
+	 *
+	 * @param string[] $recipients Recipient fields of the repointable notifications.
+	 * @return string 'all', 'some' or 'none'.
+	 */
+	protected function routing( array $recipients ) {
+		$ours  = 0;
+		$total = 0;
+
+		foreach ( $recipients as $recipient ) {
+			foreach ( $this->addresses_in( $recipient ) as $address ) {
+				++$total;
+
+				if ( humainbox_is_inbox_address( $address ) ) {
+					++$ours;
+				}
+			}
+		}
+
+		if ( 0 === $ours ) {
+			return 'none';
+		}
+
+		return $ours === $total ? 'all' : 'some';
+	}
+
+	/**
+	 * Whether one notification still delivers to us and only to us.
+	 *
+	 * The test a restore applies before writing — see apply_snapshot().
+	 *
+	 * @param string $recipient Whatever the form plugin stores now.
+	 * @return bool
+	 */
+	protected function still_ours( $recipient ) {
+		return 'all' === $this->routing( array( $recipient ) );
+	}
+
+	/**
+	 * What somebody should know before pointing this form at us.
+	 *
+	 * ── Several people
+	 *
+	 * A form addressed to "owner@, sales@" reaches two people today. After the change
+	 * it reaches Humainbox, which forwards to the recipients set on the inbox — and
+	 * unless both are set there, one of them silently stops hearing about enquiries.
+	 * The plugin cannot see the inbox's recipients, so it says so while the list of
+	 * people is still on screen to copy.
+	 *
+	 * ── A copy on the side
+	 *
+	 * A Cc, a Bcc or a second mail template to a fixed address is not repointed: it
+	 * is a separate choice the site owner made and it is not ours to take away. But
+	 * that copy never passes through Humainbox, so whoever gets it keeps getting the
+	 * spam — and they are usually the person who asked for the filter.
+	 *
+	 * @param string[] $recipients Recipient fields of the repointable notifications.
+	 * @param string[] $copies     Addresses copied outside those, however they are set.
+	 * @return string[]
+	 */
+	protected function notes( array $recipients, array $copies ) {
+		$notes  = array();
+		$people = array();
+
+		foreach ( $recipients as $recipient ) {
+			foreach ( $this->addresses_in( $recipient ) as $address ) {
+				if ( ! humainbox_is_inbox_address( $address ) ) {
+					$people[] = $address;
+				}
+			}
+		}
+
+		$people = array_values( array_unique( $people ) );
+
+		if ( count( $people ) > 1 ) {
+			$notes[] = sprintf(
+				/* translators: 1: how many addresses, 2: the addresses, comma-separated. */
+				__( 'Reaches %1$d addresses today: %2$s. Once it goes to Humainbox, only the recipients set on your Humainbox inbox get it — add each of these there.', 'humainbox' ),
+				count( $people ),
+				implode( ', ', $people )
+			);
+		}
+
+		$bypass = array();
+
+		foreach ( $copies as $copy ) {
+			foreach ( $this->addresses_in( $copy ) as $address ) {
+				if ( ! humainbox_is_inbox_address( $address ) ) {
+					$bypass[] = $address;
+				}
+			}
+		}
+
+		$bypass = array_values( array_unique( $bypass ) );
+
+		if ( ! empty( $bypass ) ) {
+			$notes[] = sprintf(
+				/* translators: %s: the addresses copied, comma-separated. */
+				__( 'Also sends a copy to %s. That copy does not pass through Humainbox and is not filtered, so it is left as it is — change it in the form plugin if it should be.', 'humainbox' ),
+				implode( ', ', $bypass )
+			);
+		}
+
+		return $notes;
 	}
 }

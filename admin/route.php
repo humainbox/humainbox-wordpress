@@ -60,14 +60,15 @@ $humainbox_live = '' !== $humainbox_address && $humainbox_pointed > 0;
 	<div class="humainbox-node humainbox-node-ours">
 		<span class="humainbox-node-mark">
 			<?php
-			$humainbox_mark_size = 26;
+			$humainbox_mark_size     = 26;
+			$humainbox_mark_centered = true;
 			require HUMAINBOX_PATH . 'admin/mark.php';
 			?>
 		</span>
 		<span class="humainbox-node-name"><?php echo esc_html__( 'Humainbox', 'humainbox' ); ?></span>
 		<span class="humainbox-node-note">
 			<?php if ( '' === $humainbox_address ) : ?>
-				<?php echo esc_html__( 'no address saved', 'humainbox' ); ?>
+				<?php echo esc_html__( 'spam filter · not set up yet', 'humainbox' ); ?>
 			<?php else : ?>
 				<?php /* Their own address, read back to them. The most status-like
 				         thing this node can say, and a free check that what they
@@ -85,19 +86,21 @@ $humainbox_live = '' !== $humainbox_address && $humainbox_pointed > 0;
 				<path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.6a1 1 0 00-.7.3l-2.4 2.4a1 1 0 01-.7.3h-3.2a1 1 0 01-.7-.3l-2.4-2.4a1 1 0 00-.7-.3H4"/>
 			</svg>
 		</span>
-		<span class="humainbox-node-name"><?php echo esc_html__( 'Whoever answers', 'humainbox' ); ?></span>
+		<?php /* "Your inbox", not "Whoever answers": that read as a person or a role, and
+		         said nothing about the one fact that changes here — once a form goes
+		         through us, the mail is delivered to the recipients set in Humainbox,
+		         not to the address the form used to carry. */ ?>
+		<span class="humainbox-node-name"><?php echo esc_html__( 'Your inbox', 'humainbox' ); ?></span>
 		<span class="humainbox-node-note">
 			<?php
-			if ( '' === $humainbox_address ) {
-				echo esc_html__( 'unchanged', 'humainbox' );
-			} elseif ( $humainbox_pointed > 0 ) {
+			if ( $humainbox_pointed > 0 ) {
 				printf(
 					/* translators: %d: how many forms are pointed at Humainbox. */
-					esc_html( _n( '%d form is routed this way', '%d forms are routed this way', $humainbox_pointed, 'humainbox' ) ),
+					esc_html( _n( '%d form arrives via your Humainbox recipients', '%d forms arrive via your Humainbox recipients', $humainbox_pointed, 'humainbox' ) ),
 					esc_html( number_format_i18n( $humainbox_pointed ) )
 				);
 			} else {
-				echo esc_html__( 'nothing routed yet', 'humainbox' );
+				echo esc_html__( 'forms still deliver here directly', 'humainbox' );
 			}
 			?>
 		</span>

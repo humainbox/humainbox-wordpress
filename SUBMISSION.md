@@ -34,6 +34,25 @@ Also fixed while running the official Plugin Check against the built ZIP:
 
 `wp plugin check humainbox` on the built ZIP: **no errors found.**
 
+## Found in the 2026-09-30 review, verified in a scratch WordPress 7.1.2
+
+37 checks against real Contact Form 7 and WPForms Lite forms, plus Plugin Check 2.1
+(including experimental checks): no errors, no warnings.
+
+- **WPForms: every backslash in a form was deleted on save.** wpforms_decode() unslashes,
+  and update() unslashes again in WPForms' default mode. Reproduced, then fixed by writing
+  back the raw JSON slashed as far as update() will unslash it.
+- **Forms with a visitor-copy read "Unchanged" after being pointed at us**, and the route
+  said "nothing routed yet". Status now comes from the adapter (`routing`).
+- **The bare humainbox.com domain was accepted** — hello@ would have sent customers' leads
+  to our support desk. Only `in.humainbox.com` (and subdomains) now.
+- **Restore overwrote changes made by hand since.** It now only restores notifications
+  that still go to Humainbox, and says so.
+- **Gravity: toType 'email' with a merge tag ({Email:3}) was overwritten.** Same rule as
+  the other two adapters now.
+- A failed apply left a backup record for an unchanged form; it is withdrawn now.
+- New: a test-message button, notes for multi-recipient forms and Cc/Bcc/Mail (2) copies.
+
 ## A near miss worth keeping
 
 `assets()` — the method that enqueues the stylesheet and the script — was written,
@@ -47,20 +66,13 @@ being present is not the feature; the file being loaded is.
 
 ## Still needs a person
 
-- [ ] **`Contributors:` must be a real wordpress.org username.** It says `humainbox`,
-      which is a guess. Register the account, then put the actual slug there. A
-      contributor that does not resolve is an immediate bounce and the most avoidable
-      one on this list.
+- [x] **`Contributors: humainbox`** — the account exists (registered 2026-09-30 with
+      `accounts@humainbox.com`, which is how the review team verifies brand ownership).
 
-- [ ] **⚠️ DECIDE THE PLUGIN NAME BEFORE SUBMITTING. THE SLUG IS TAKEN FROM IT AND CAN
-      NEVER BE CHANGED** — not by you, not by the review team.
-
-      "Humainbox" is a service nobody has searched for yet. wordpress.org's search
-      reads the title, so a plugin called only that is findable by people who already
-      know the name and by nobody else — which is the opposite of why it exists. A
-      title carrying what it does ("Humainbox — Contact Form Recipients", or similar)
-      is findable by somebody typing "contact form notification email" into their own
-      dashboard. This is the one decision here that cannot be undone later.
+- [x] **Name stays "Humainbox", slug `humainbox`.** A longer, descriptive name would make
+      the slug `humainbox-contact-form-…` while the text domain stays `humainbox` — a
+      mismatch the review bounces. The display title can be made descriptive after
+      approval; the slug never can.
 
 - [ ] **Confirm `Tested up to:` on the day.** It says 7.1, which was correct when
       checked against api.wordpress.org. Do not take it from a local install — those

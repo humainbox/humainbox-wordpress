@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Humainbox
  * Plugin URI:        https://humainbox.com/integrations
- * Description:       See where every contact form on this site delivers, and point them all at a Humainbox address in one click. Keeps a copy of the original addresses so you can put them back.
+ * Description:       Stop contact form spam, including AI-written messages, without a CAPTCHA. Connects Contact Form 7, WPForms and Gravity Forms to Humainbox, and can put every form back.
  * Version:           1.0.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
@@ -79,9 +79,9 @@ define( 'HUMAINBOX_PATH', plugin_dir_path( __FILE__ ) );
 /**
  * Where the chosen address is kept.
  *
- * One option holding a small array, rather than a row per setting: it is read on
- * every admin page load for this plugin and never anywhere else, and a single
- * autoloaded option is cheaper than four.
+ * One option holding a small array, rather than a row per setting. It is read on
+ * this plugin's own screen and nowhere else, so it is saved with autoload off —
+ * there is no reason for every page of the site to load it.
  */
 define( 'HUMAINBOX_OPTION', 'humainbox_settings' );
 
@@ -107,11 +107,21 @@ define( 'HUMAINBOX_BACKUP_OPTION', 'humainbox_original_recipients' );
  * save succeeded.
  *
  * So the question is not "is this an email address" but "is this OUR address".
- * A subdomain is accepted rather than the exact host in use today, because a
- * plugin installed once sits on a site for years: if the inbox domain ever
- * changes, an old copy must not start refusing new addresses.
  */
 define( 'HUMAINBOX_HOST', 'humainbox.com' );
+
+/**
+ * The host inbox addresses are issued on.
+ *
+ * ⚠️ NOT THE BARE DOMAIN. This used to accept anything ending in humainbox.com, and
+ * the bare domain is where our own team's mail lives — hello@, support@. An
+ * administrator who pasted the contact address off our website would have sent
+ * every one of their customers' enquiries to our support desk, and the save would
+ * have said "saved". Inboxes are issued on this host and nowhere else; a subdomain
+ * of it is still accepted, so an old copy of the plugin keeps working if inboxes
+ * are ever sharded.
+ */
+define( 'HUMAINBOX_INBOX_HOST', 'in.' . HUMAINBOX_HOST );
 
 
 require_once HUMAINBOX_PATH . 'includes/class-humainbox-adapter.php';
@@ -120,6 +130,33 @@ require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-wpforms-adapter
 require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-gravity-adapter.php';
 require_once HUMAINBOX_PATH . 'includes/class-humainbox-forms.php';
 require_once HUMAINBOX_PATH . 'includes/class-humainbox-settings.php';
+
+/**
+ * Is this a Humainbox inbox address?
+ *
+ * Shared by the save handler, which refuses anything else, and by every adapter,
+ * which uses it to tell a form already routed through us from one that is not —
+ * including through an address that is not the one saved today.
+ *
+ * Host comparison rather than a pattern over the whole address: the part before
+ * the @ is a token we do not generate here and must not second-guess.
+ *
+ * @param string $address Anything a form plugin stores as a recipient.
+ * @return bool
+ */
+function humainbox_is_inbox_address( $address ) {
+	$address = trim( (string) $address );
+
+	if ( ! is_email( $address ) ) {
+		return false;
+	}
+
+	$host = strtolower( (string) substr( strrchr( $address, '@' ), 1 ) );
+	$dot  = '.' . HUMAINBOX_INBOX_HOST;
+
+	return HUMAINBOX_INBOX_HOST === $host
+		|| substr( $host, - strlen( $dot ) ) === $dot;
+}
 
 /**
  * Boot the admin side, and only the admin side.

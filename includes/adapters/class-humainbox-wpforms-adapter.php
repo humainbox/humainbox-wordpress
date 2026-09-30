@@ -98,7 +98,8 @@ class Humainbox_Wpforms_Adapter extends Humainbox_Adapter {
 			return array();
 		}
 
-		$out = array();
+		$out      = array();
+		$may_save = $this->may_save();
 
 		foreach ( $forms as $form ) {
 			if ( ! isset( $form->ID ) ) {
@@ -107,41 +108,122 @@ class Humainbox_Wpforms_Adapter extends Humainbox_Adapter {
 
 			$data = wpforms_decode( $form->post_content );
 
-			$repointable = 0;
+			$repointable = array();
+			$copies      = array();
 
 			foreach ( ( isset( $data['settings']['notifications'] ) ? $data['settings']['notifications'] : array() ) as $notification ) {
-				if ( $this->may_be_repointed( isset( $notification['email'] ) ? $notification['email'] : '', self::STATIC_TAGS ) ) {
-					++$repointable;
+				$email = isset( $notification['email'] ) ? (string) $notification['email'] : '';
+
+				if ( $this->may_be_repointed( $email, self::STATIC_TAGS ) ) {
+					$repointable[] = $email;
 				}
+
+				// WPForms Pro's CC setting, on any notification: the enquiry reaches
+				// that address whatever the To says, and never through us.
+				if ( ! empty( $notification['carboncopy'] ) ) {
+					$copies[] = (string) $notification['carboncopy'];
+				}
+			}
+
+			$changeable = ! empty( $repointable ) && $may_save;
+
+			if ( empty( $repointable ) ) {
+				$reason = __( 'Every notification on this form is addressed with a smart tag worked out for each submission.', 'humainbox' );
+			} elseif ( ! $may_save ) {
+				$reason = __( 'Your account on this site is not allowed to save HTML, and WPForms would strip it from this form while saving the change. Change the address in WPForms, or ask an administrator who can.', 'humainbox' );
+			} else {
+				$reason = '';
 			}
 
 			$out[] = array(
 				'id'         => (string) $form->ID,
 				'title'      => isset( $form->post_title ) ? (string) $form->post_title : '',
-				'recipient'  => $this->recipients_from( $data ),
-				'changeable' => $repointable > 0,
-				'reason'     => $repointable > 0 ? '' : __( 'Every notification on this form is addressed with a smart tag worked out for each submission.', 'humainbox' ),
+				// Only the notifications this plugin manages, when there are any: the
+				// visitor's own copy ({field_id="1"}) is not ours, is never changed, and
+				// shown beside ours it read as a second recipient. 'aside' says it exists.
+				'recipient'  => ! empty( $repointable ) ? implode( ', ', array_unique( array_filter( $repointable, 'strlen' ) ) ) : $this->recipients_from( $data ),
+				'aside'      => ! empty( $repointable ) && count( array_filter( explode( ', ', $this->recipients_from( $data ) ), 'strlen' ) ) > count( array_unique( array_filter( $repointable, 'strlen' ) ) ),
+				'changeable' => $changeable,
+				'reason'     => $reason,
+				'routing'    => empty( $repointable ) ? 'none' : $this->routing( $repointable ),
+				'notes'      => $changeable ? $this->notes( $repointable, $copies ) : array(),
 			);
 		}
 
 		return $out;
 	}
 
+	/**
+	 * Whether saving a form through WPForms would leave it as it was.
+	 *
+	 * ⚠️ FOR A USER WITHOUT unfiltered_html, WPForms' update() RUNS wp_strip_all_tags
+	 * OVER THE WHOLE FORM. Every HTML field, every confirmation message with a link in
+	 * it, flattened to text — to change one address. That user is not hypothetical:
+	 * it is every site administrator on a multisite network, and anyone on a site
+	 * with DISALLOW_UNFILTERED_HTML. The form builder would do the same to them, but
+	 * the builder is where they would see it happen; this screen is not.
+	 *
+	 * @return bool
+	 */
+	private function may_save() {
+		return current_user_can( 'unfiltered_html' );
+	}
+
+	/**
+	 * Save form data, read by raw(), back through WPForms — byte for byte as it was
+	 * apart from the addresses changed.
+	 *
+	 * ⚠️ THIS USED TO DELETE EVERY BACKSLASH IN THE FORM, TWICE OVER.
+	 *
+	 * The data was read with wpforms_decode(), which runs wp_unslash() on what it
+	 * decodes, and handed to update(), which — in WPForms' default mode — runs
+	 * wp_unslash() on what it is given, because the builder passes it values straight
+	 * from a POST body. Two unslashes, and nothing to take them from but the real
+	 * backslashes: a regex in an input mask, a Windows path in an HTML block, an
+	 * escaped quote in a confirmation. Silently, on the save that changed an address,
+	 * on a form nobody was looking at. Reproduced against WPForms Lite before fixing.
+	 *
+	 * So the stored JSON is read without unslashing (raw()), and slashed here exactly
+	 * as far as update() is about to unslash it:
+	 *
+	 *  - default mode: update() unslashes everything, so everything is slashed;
+	 *  - with form data slashing enabled (WPForms 1.9+, opt-in): update() unslashes
+	 *    only the field keys named by the same filter it uses, so only those are.
+	 *
+	 * @param int   $form_id Form ID.
+	 * @param array $data    Form data from raw().
+	 * @return bool
+	 */
+	private function save( $form_id, array $data ) {
+		if ( ! function_exists( 'wpforms_is_form_data_slashing_enabled' ) || ! wpforms_is_form_data_slashing_enabled() ) {
+			return (bool) $this->handler()->update( $form_id, wp_slash( $data ) );
+		}
+
+		// Same filter and defaults as WPForms_Form_Handler::unslash_field_keys().
+		$keys = (array) apply_filters( 'wpforms_form_handler_unslash_field_keys', array( 'columns-json', 'calculation_code' ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPForms' own filter, read so that our slashing matches its unslashing.
+
+		if ( ! empty( $data['fields'] ) && is_array( $data['fields'] ) ) {
+			foreach ( $data['fields'] as $id => $field ) {
+				foreach ( $keys as $key ) {
+					if ( is_array( $field ) && isset( $field[ $key ] ) ) {
+						$data['fields'][ $id ][ $key ] = wp_slash( $field[ $key ] );
+					}
+				}
+			}
+		}
+
+		return (bool) $this->handler()->update( $form_id, $data );
+	}
+
 	public function set_recipient( $form_id, $recipient ) {
-		if ( ! $this->is_available() ) {
+		if ( ! $this->is_available() || ! $this->may_save() ) {
 			return false;
 		}
 
 		$form_id = absint( $form_id );
-		$form    = $this->handler()->get( $form_id );
+		$data    = $this->raw( $form_id );
 
-		if ( empty( $form ) || ! isset( $form->post_content ) ) {
-			return false;
-		}
-
-		$data = wpforms_decode( $form->post_content );
-
-		if ( ! is_array( $data ) || empty( $data['settings']['notifications'] ) ) {
+		if ( null === $data || empty( $data['settings']['notifications'] ) ) {
 			return false;
 		}
 
@@ -180,7 +262,7 @@ class Humainbox_Wpforms_Adapter extends Humainbox_Adapter {
 		 * clears its caches. Writing post_content with wp_update_post would leave all
 		 * three undone.
 		 */
-		return (bool) $this->handler()->update( $form_id, $data );
+		return $this->save( $form_id, $data );
 	}
 
 	/**
@@ -206,7 +288,7 @@ class Humainbox_Wpforms_Adapter extends Humainbox_Adapter {
 	}
 
 	public function snapshot( $form_id ) {
-		$data = $this->data( $form_id );
+		$data = $this->raw( $form_id );
 
 		if ( null === $data ) {
 			return array();
@@ -226,32 +308,57 @@ class Humainbox_Wpforms_Adapter extends Humainbox_Adapter {
 			return false;
 		}
 
+		if ( ! $this->may_save() ) {
+			return false;
+		}
+
 		$form_id = absint( $form_id );
-		$data    = $this->data( $form_id );
+		$data    = $this->raw( $form_id );
 
 		if ( null === $data || empty( $data['settings']['notifications'] ) ) {
 			return false;
 		}
 
+		$restored = 0;
+
 		foreach ( $snapshot['emails'] as $key => $email ) {
 			// A notification deleted since the snapshot was taken is not recreated.
 			// Putting back a notification somebody removed on purpose would be a
 			// worse surprise than leaving it gone.
-			if ( isset( $data['settings']['notifications'][ $key ] ) ) {
-				$data['settings']['notifications'][ $key ]['email'] = (string) $email;
+			if ( ! isset( $data['settings']['notifications'][ $key ] ) ) {
+				continue;
 			}
+
+			$now = isset( $data['settings']['notifications'][ $key ]['email'] ) ? $data['settings']['notifications'][ $key ]['email'] : '';
+
+			// Only what still goes to us. A visitor-copy we never touched, or an
+			// address somebody has changed by hand since, is left as it is.
+			if ( ! $this->still_ours( $now ) ) {
+				continue;
+			}
+
+			$data['settings']['notifications'][ $key ]['email'] = (string) $email;
+			++$restored;
 		}
 
-		return (bool) $this->handler()->update( $form_id, $data );
+		if ( 0 === $restored ) {
+			return 0;
+		}
+
+		return $this->save( $form_id, $data ) ? $restored : false;
 	}
 
 	/**
-	 * A form's decoded settings, or null.
+	 * A form's stored settings exactly as stored, or null.
+	 *
+	 * ⚠️ json_decode(), NOT wpforms_decode(). The latter runs wp_unslash() over what it
+	 * decodes, which is right for reading and wrong for anything that will be written
+	 * back: every backslash in the form would be gone before save() saw it. See save().
 	 *
 	 * @param string $form_id Form identifier.
 	 * @return array|null
 	 */
-	private function data( $form_id ) {
+	private function raw( $form_id ) {
 		if ( ! $this->is_available() ) {
 			return null;
 		}
@@ -262,7 +369,7 @@ class Humainbox_Wpforms_Adapter extends Humainbox_Adapter {
 			return null;
 		}
 
-		$data = wpforms_decode( $form->post_content );
+		$data = json_decode( (string) $form->post_content, true );
 
 		return is_array( $data ) ? $data : null;
 	}

@@ -56,8 +56,8 @@ class Humainbox_Settings {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'admin_post_humainbox_save', array( $this, 'handle_save' ) );
-		add_action( 'admin_post_humainbox_apply', array( $this, 'handle_apply' ) );
-		add_action( 'admin_post_humainbox_restore', array( $this, 'handle_restore' ) );
+		add_action( 'admin_post_humainbox_forms', array( $this, 'handle_forms' ) );
+		add_action( 'admin_post_humainbox_test', array( $this, 'handle_test' ) );
 	}
 
 	/**
@@ -108,11 +108,14 @@ class Humainbox_Settings {
 			'humainbox-settings',
 			'humainboxL10n',
 			array(
-				'nothingSelected' => __( 'Tick the forms you want to point at Humainbox first.', 'humainbox' ),
+				'nothingSelected' => __( 'Tick the forms first.', 'humainbox' ),
+				'restoreOne'      => __( 'Restore 1 form to its original address? Its enquiries will go there directly again, without spam protection.', 'humainbox' ),
+				/* translators: %1$d: number of forms. */
+				'restoreMany'     => __( 'Restore %1$d forms to their original addresses? Their enquiries will go there directly again, without spam protection.', 'humainbox' ),
 				/* translators: 1: always 1, 2: the Humainbox address. */
-				'confirmOne'      => __( 'Point 1 form at %2$s? Its current address is saved first, so you can put it back.', 'humainbox' ),
+				'confirmOne'      => __( 'Connect 1 form to %2$s? From now on its enquiries go through Humainbox to the recipients you set there. Its current address is saved first, so you can undo this.', 'humainbox' ),
 				/* translators: 1: number of forms, 2: the Humainbox address. */
-				'confirmMany'     => __( 'Point %1$d forms at %2$s? Their current addresses are saved first, so you can put them back.', 'humainbox' ),
+				'confirmMany'     => __( 'Connect %1$d forms to %2$s? From now on their enquiries go through Humainbox to the recipients you set there. Their current addresses are saved first, so you can undo this.', 'humainbox' ),
 			)
 		);
 	}
@@ -158,7 +161,7 @@ class Humainbox_Settings {
 		 | and "somewhere that is not us" is the answer that silently costs a site
 		 | its enquiries. See HUMAINBOX_HOST.
 		 */
-		if ( '' !== $address && ! $this->is_one_of_ours( $address ) ) {
+		if ( '' !== $address && ! humainbox_is_inbox_address( $address ) ) {
 			$this->redirect( 'not-ours' );
 		}
 
@@ -168,11 +171,29 @@ class Humainbox_Settings {
 	}
 
 	/**
+	 * The forms table: connect or restore, whichever button was pressed.
+	 *
+	 * One handler for both because they share one form and so one nonce — see the
+	 * note on the table in settings-page.php. Anything but an explicit "restore"
+	 * is a connect, which is the button Enter presses.
+	 */
+	public function handle_forms() {
+		$this->guard( 'humainbox_forms' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- guard() above ran check_admin_referer( 'humainbox_forms' ), which dies rather than returning.
+		$do = isset( $_POST['humainbox_do'] ) ? sanitize_key( wp_unslash( $_POST['humainbox_do'] ) ) : '';
+
+		if ( 'restore' === $do ) {
+			$this->restore_chosen();
+		}
+
+		$this->apply_chosen();
+	}
+
+	/**
 	 * Point selected forms at the address.
 	 */
-	public function handle_apply() {
-		$this->guard( 'humainbox_apply' );
-
+	private function apply_chosen() {
 		$settings = $this->settings();
 
 		if ( '' === $settings['address'] ) {
@@ -203,14 +224,19 @@ class Humainbox_Settings {
 
 	/**
 	 * Put selected forms back.
+	 *
+	 * With one table for both actions, a ticked form may be one this plugin never
+	 * changed. That is not a failure to restore it — there is simply nothing to
+	 * undo — so it is skipped rather than counted against the result.
 	 */
-	public function handle_restore() {
-		$this->guard( 'humainbox_restore' );
-
+	private function restore_chosen() {
 		$selected = $this->chosen_forms();
+		$backup   = Humainbox_Forms::backup();
 
-		$done   = 0;
-		$failed = 0;
+		$done    = 0;
+		$kept    = 0;
+		$failed  = 0;
+		$skipped = 0;
 
 		foreach ( $selected as $token ) {
 			list( $slug, $form_id ) = $this->split( $token );
@@ -219,32 +245,75 @@ class Humainbox_Settings {
 				continue;
 			}
 
-			if ( Humainbox_Forms::restore( $slug, $form_id ) ) {
+			if ( ! isset( $backup[ Humainbox_Forms::key( $slug, $form_id ) ] ) ) {
+				++$skipped;
+				continue;
+			}
+
+			$outcome = Humainbox_Forms::restore( $slug, $form_id );
+
+			if ( 'restored' === $outcome ) {
 				++$done;
+			} elseif ( 'kept' === $outcome ) {
+				++$kept;
 			} else {
 				++$failed;
 			}
 		}
 
-		$this->redirect( 'restored', $done, $failed );
+		if ( 0 === $done + $kept + $failed && $skipped > 0 ) {
+			$this->redirect( 'nothing-to-undo' );
+		}
+
+		$this->redirect( 'restored', $done, $failed, $kept );
 	}
 
 	/**
-	 * Is this address one of ours?
+	 * Send one test message to the saved address.
 	 *
-	 * Host comparison rather than a pattern over the whole address: the part before
-	 * the @ is a token we do not generate here and must not second-guess, and a
-	 * regex written across both halves would start rejecting addresses we issue.
+	 * ⚠️ THE ADDRESS CHECK ON SAVE CANNOT CATCH A TYPO, AND A TYPO LOSES EVERYTHING.
 	 *
-	 * @param string $address An address is_email() has already accepted.
-	 * @return bool
+	 * Refusing addresses that are not ours stops the worst paste, but one wrong or
+	 * missing character inside a real-looking inbox address passes every test this
+	 * plugin can run — and every form pointed at it then delivers into an inbox that
+	 * does not exist. So the screen offers the one check that proves the whole path:
+	 * a message, sent the way the forms send theirs, that should turn up in the
+	 * Humainbox panel within a minute.
+	 *
+	 * It proves something else a site owner rarely knows: whether this WordPress can
+	 * send mail at all. Very many cannot, and a form on such a site has been failing
+	 * for as long as it has existed, whatever address it uses.
+	 *
+	 * Through wp_mail(), the same function the form plugins use — not a network call,
+	 * and nothing is sent anywhere but to the address on this screen.
 	 */
-	private function is_one_of_ours( $address ) {
-		$host = strtolower( (string) substr( strrchr( $address, '@' ), 1 ) );
-		$dot  = '.' . HUMAINBOX_HOST;
+	public function handle_test() {
+		$this->guard( 'humainbox_test' );
 
-		return HUMAINBOX_HOST === $host
-			|| substr( $host, - strlen( $dot ) ) === $dot;
+		$settings = $this->settings();
+
+		if ( '' === $settings['address'] ) {
+			$this->redirect( 'no-address' );
+		}
+
+		$site = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		$sent = wp_mail(
+			$settings['address'],
+			sprintf(
+				/* translators: %s: this site's domain. */
+				__( 'Humainbox test from %s', 'humainbox' ),
+				$site
+			),
+			sprintf(
+				/* translators: 1: this site's address, 2: the name of the person who pressed the button. */
+				__( "This is a test sent from the Humainbox plugin on %1\$s by %2\$s.\n\nIf it shows up in your Humainbox panel, this site can send mail and the address is right. Nothing needs to be done with it.", 'humainbox' ),
+				home_url(),
+				wp_get_current_user()->display_name
+			)
+		);
+
+		$this->redirect( $sent ? 'test-sent' : 'test-failed' );
 	}
 
 	/**
@@ -336,8 +405,9 @@ class Humainbox_Settings {
 	 * @param string $status Status key.
 	 * @param int    $done   How many succeeded.
 	 * @param int    $failed How many did not.
+	 * @param int    $kept   How many were left as they are.
 	 */
-	private function redirect( $status, $done = 0, $failed = 0 ) {
+	private function redirect( $status, $done = 0, $failed = 0, $kept = 0 ) {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
@@ -345,6 +415,7 @@ class Humainbox_Settings {
 					'humainbox_status' => rawurlencode( $status ),
 					'humainbox_done'   => absint( $done ),
 					'humainbox_failed' => absint( $failed ),
+					'humainbox_kept'   => absint( $kept ),
 				),
 				admin_url( 'options-general.php' )
 			)
@@ -395,10 +466,33 @@ class Humainbox_Settings {
 		$done = isset( $_GET['humainbox_done'] ) ? absint( wp_unslash( $_GET['humainbox_done'] ) ) : 0;
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
 		$failed = isset( $_GET['humainbox_failed'] ) ? absint( wp_unslash( $_GET['humainbox_failed'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
+		$kept = isset( $_GET['humainbox_kept'] ) ? absint( wp_unslash( $_GET['humainbox_kept'] ) ) : 0;
+		$address = $this->settings()['address'];
 
 		switch ( $status ) {
 			case 'saved':
-				return array( 'type' => 'success', 'text' => __( 'Address saved.', 'humainbox' ) );
+				if ( '' === $address ) {
+					return array( 'type' => 'success', 'text' => __( 'Address cleared. No form was changed.', 'humainbox' ) );
+				}
+
+				return array( 'type' => 'success', 'text' => __( 'Address saved. No form has been changed yet — send a test message first to make sure the address is right.', 'humainbox' ) );
+
+			case 'test-sent':
+				return array(
+					'type' => 'success',
+					'text' => sprintf(
+						/* translators: %s: the Humainbox address. */
+						__( 'Test sent to %s. It should appear in your Humainbox panel within a minute. If it does not, check the address before pointing any form at it.', 'humainbox' ),
+						$address
+					),
+				);
+
+			case 'test-failed':
+				return array(
+					'type' => 'error',
+					'text' => __( 'WordPress could not send the test. This site may not be able to send email at all — and if so, its forms are not delivering either, whatever address they use. An SMTP plugin is the usual fix. Nothing was changed.', 'humainbox' ),
+				);
 
 			case 'invalid':
 				return array( 'type' => 'error', 'text' => __( 'That does not look like an email address, so nothing was saved.', 'humainbox' ) );
@@ -408,13 +502,13 @@ class Humainbox_Settings {
 					'type' => 'error',
 					'text' => sprintf(
 						/* translators: %s: the end of a Humainbox address, e.g. @in.humainbox.com */
-						__( 'That is an email address, but not a Humainbox one — it should end in %s. Nothing was saved and your forms are untouched.', 'humainbox' ),
-						'@in.' . HUMAINBOX_HOST
+						__( 'That is an email address, but not a Humainbox inbox address — those end in %s. Nothing was saved and your forms are untouched.', 'humainbox' ),
+						'@' . HUMAINBOX_INBOX_HOST
 					),
 				);
 
 			case 'no-address':
-				return array( 'type' => 'error', 'text' => __( 'Save a Humainbox address first — there is nowhere to point the forms at yet.', 'humainbox' ) );
+				return array( 'type' => 'error', 'text' => __( 'Save your Humainbox address first.', 'humainbox' ) );
 
 			/*
 			 | ⚠️ THE FAILURE CLAUSE IS NOT PRINTED WHEN THERE IS NO FAILURE.
@@ -431,33 +525,55 @@ class Humainbox_Settings {
 					return array( 'type' => 'info', 'text' => __( 'No forms were selected, so nothing changed.', 'humainbox' ) );
 				}
 
-				return array(
-					'type' => $failed > 0 ? 'warning' : 'success',
-					'text' => $this->outcome(
-						/* translators: %d: number of forms now delivering to Humainbox. */
-						_n( '%d form now delivers to Humainbox.', '%d forms now deliver to Humainbox.', $done, 'humainbox' ),
-						/* translators: %d: number of forms that could not be changed. */
-						_n( '%d could not be changed.', '%d could not be changed.', $failed, 'humainbox' ),
-						$done,
-						$failed
-					),
+				$text = $this->outcome(
+					/* translators: %d: number of forms now delivering to Humainbox. */
+					_n( '%d form is now connected to Humainbox.', '%d forms are now connected to Humainbox.', $done, 'humainbox' ),
+					/* translators: %d: number of forms that could not be changed. */
+					_n( '%d could not be changed.', '%d could not be changed.', $failed, 'humainbox' ),
+					$done,
+					$failed
 				);
 
-			case 'restored':
-				if ( 0 === $done && 0 === $failed ) {
-					return array( 'type' => 'info', 'text' => __( 'No forms were selected, so nothing changed.', 'humainbox' ) );
+				// The one check left that only a person can do, while it is fresh.
+				if ( $done > 0 ) {
+					$text .= ' ' . __( 'Send one enquiry through a form yourself and check that it arrives in your Humainbox panel.', 'humainbox' );
 				}
 
 				return array(
 					'type' => $failed > 0 ? 'warning' : 'success',
-					'text' => $this->outcome(
-						/* translators: %d: number of forms put back. */
-						_n( '%d form is back on its original address.', '%d forms are back on their original addresses.', $done, 'humainbox' ),
-						/* translators: %d: number of forms that could not be put back. */
-						_n( '%d could not be restored.', '%d could not be restored.', $failed, 'humainbox' ),
-						$done,
-						$failed
-					),
+					'text' => $text,
+				);
+
+			case 'nothing-to-undo':
+				return array( 'type' => 'info', 'text' => __( 'None of the selected forms were changed by this plugin, so there was nothing to restore.', 'humainbox' ) );
+
+			case 'restored':
+				if ( 0 === $done && 0 === $failed && 0 === $kept ) {
+					return array( 'type' => 'info', 'text' => __( 'No forms were selected, so nothing changed.', 'humainbox' ) );
+				}
+
+				$text = $this->outcome(
+					/* translators: %d: number of forms put back. */
+					_n( '%d form sends to its original address again, without spam protection.', '%d forms send to their original addresses again, without spam protection.', $done, 'humainbox' ),
+					/* translators: %d: number of forms that could not be put back. */
+					_n( '%d could not be restored.', '%d could not be restored.', $failed, 'humainbox' ),
+					$done,
+					$failed
+				);
+
+				if ( $kept > 0 ) {
+					$text = trim(
+						$text . ' ' . sprintf(
+							/* translators: %d: number of forms left as they are. */
+							_n( '%d no longer went to Humainbox — it had been changed since — so it was left as it is.', '%d no longer went to Humainbox — they had been changed since — so they were left as they are.', $kept, 'humainbox' ),
+							$kept
+						)
+					);
+				}
+
+				return array(
+					'type' => $failed > 0 ? 'warning' : 'success',
+					'text' => $text,
 				);
 		}
 

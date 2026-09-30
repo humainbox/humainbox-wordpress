@@ -81,8 +81,9 @@ class Humainbox_Forms {
 			return false;
 		}
 
-		$key    = self::key( $slug, $form_id );
-		$backup = self::backup();
+		$key     = self::key( $slug, $form_id );
+		$backup  = self::backup();
+		$created = false;
 
 		/*
 		 | ⚠️ RECORDED BEFORE THE WRITE, AND ONLY ONCE.
@@ -114,9 +115,26 @@ class Humainbox_Forms {
 			);
 
 			update_option( HUMAINBOX_BACKUP_OPTION, $backup, false );
+			$created = true;
 		}
 
-		return $adapter->set_recipient( $form_id, $recipient );
+		if ( $adapter->set_recipient( $form_id, $recipient ) ) {
+			return true;
+		}
+
+		/*
+		 | The write failed, so the form is exactly as it was — and a record made for
+		 | it a moment ago would list it in the "Before Humainbox" column as if it had been
+		 | changed. Only this call's own record is withdrawn: one that was already
+		 | there belongs to an earlier, successful change and is still the way back.
+		 */
+		if ( $created ) {
+			$backup = self::backup();
+			unset( $backup[ $key ] );
+			update_option( HUMAINBOX_BACKUP_OPTION, $backup, false );
+		}
+
+		return false;
 	}
 
 	/**
@@ -126,9 +144,14 @@ class Humainbox_Forms {
 	 * must leave the record in place, or a second attempt would have nothing to
 	 * restore from and the screen would report that there was nothing to undo.
 	 *
+	 * ⚠️ THREE OUTCOMES, NOT TWO. A form somebody has since pointed somewhere else by
+	 * hand has nothing of ours left to undo: it is left as it is and its record is
+	 * cleared, and the screen says so rather than counting it as put back. The
+	 * restore table showed where it goes now before the button was pressed.
+	 *
 	 * @param string $slug    Adapter slug.
 	 * @param string $form_id Form identifier.
-	 * @return bool
+	 * @return string 'restored', 'kept' or 'failed'.
 	 */
 	public static function restore( $slug, $form_id ) {
 		$adapter = self::adapter( $slug );
@@ -136,7 +159,7 @@ class Humainbox_Forms {
 		$backup  = self::backup();
 
 		if ( ! $adapter || ! $adapter->is_available() || ! isset( $backup[ $key ] ) ) {
-			return false;
+			return 'failed';
 		}
 
 		/*
@@ -146,17 +169,19 @@ class Humainbox_Forms {
 		 | quietly mangling it.
 		 */
 		if ( empty( $backup[ $key ]['snapshot'] ) || ! is_array( $backup[ $key ]['snapshot'] ) ) {
-			return false;
+			return 'failed';
 		}
 
-		if ( ! $adapter->apply_snapshot( $form_id, $backup[ $key ]['snapshot'] ) ) {
-			return false;
+		$restored = $adapter->apply_snapshot( $form_id, $backup[ $key ]['snapshot'] );
+
+		if ( false === $restored ) {
+			return 'failed';
 		}
 
 		unset( $backup[ $key ] );
 		update_option( HUMAINBOX_BACKUP_OPTION, $backup, false );
 
-		return true;
+		return $restored > 0 ? 'restored' : 'kept';
 	}
 
 	/**
@@ -209,7 +234,7 @@ class Humainbox_Forms {
 	 * @return string
 	 */
 	private static function current_recipient( $adapter, $form_id ) {
-		foreach ( $adapter->forms() as $form ) {
+		foreach ( self::forms_of( $adapter ) as $form ) {
 			if ( (string) $form['id'] === (string) $form_id ) {
 				return (string) $form['recipient'];
 			}
@@ -230,12 +255,33 @@ class Humainbox_Forms {
 	 * @return string
 	 */
 	private static function title( $adapter, $form_id ) {
-		foreach ( $adapter->forms() as $form ) {
+		foreach ( self::forms_of( $adapter ) as $form ) {
 			if ( (string) $form['id'] === (string) $form_id ) {
 				return (string) $form['title'];
 			}
 		}
 
 		return '';
+	}
+
+	/**
+	 * One adapter's form list, read once per request.
+	 *
+	 * Applying to thirty forms used to list every form twice per form — sixty full
+	 * inventories, each decoding every WPForms form's JSON — to find one title and
+	 * one address. The list is only ever read here for a form BEFORE that form is
+	 * written, so an entry read at the start of the request is still true for it.
+	 *
+	 * @param Humainbox_Adapter $adapter Adapter.
+	 * @return array
+	 */
+	private static function forms_of( $adapter ) {
+		static $cache = array();
+
+		if ( ! isset( $cache[ $adapter->slug() ] ) ) {
+			$cache[ $adapter->slug() ] = $adapter->forms();
+		}
+
+		return $cache[ $adapter->slug() ];
 	}
 }

@@ -71,10 +71,44 @@ class Humainbox_Cf7_Adapter extends Humainbox_Adapter {
 				'recipient'  => $recipient,
 				'changeable' => $fixed,
 				'reason'     => $fixed ? '' : __( 'Delivers to a mail tag worked out for each submission — change this one in Contact Form 7, where you can see the whole template.', 'humainbox' ),
+				'routing'    => $fixed ? $this->routing( array( $recipient ) ) : 'none',
+				'notes'      => $fixed ? $this->notes( array( $recipient ), $this->copies( $form ) ) : array(),
 			);
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Everywhere else this form's mail goes, besides the recipient we change.
+	 *
+	 * Cc and Bcc live as free text in the template's additional headers, one header
+	 * per line. Mail (2) is a second template of its own: usually the visitor's
+	 * receipt, addressed with a field tag and none of our business, but sometimes a
+	 * second copy to a colleague at a fixed address — and that copy is never
+	 * filtered.
+	 *
+	 * @param WPCF7_ContactForm $form The form.
+	 * @return string[]
+	 */
+	private function copies( $form ) {
+		$copies = array();
+		$mail   = $form->prop( 'mail' );
+
+		if ( is_array( $mail ) && ! empty( $mail['additional_headers'] ) ) {
+			preg_match_all( '/^\s*b?cc\s*:\s*(.+?)\s*$/im', (string) $mail['additional_headers'], $found );
+			$copies = array_merge( $copies, $found[1] );
+		}
+
+		$second = $form->prop( 'mail_2' );
+
+		if ( is_array( $second ) && ! empty( $second['active'] ) && isset( $second['recipient'] )
+			&& '' !== trim( (string) $second['recipient'] )
+			&& $this->may_be_repointed( $second['recipient'], self::STATIC_TAGS ) ) {
+			$copies[] = (string) $second['recipient'];
+		}
+
+		return $copies;
 	}
 
 	public function set_recipient( $form_id, $recipient ) {
@@ -148,12 +182,17 @@ class Humainbox_Cf7_Adapter extends Humainbox_Adapter {
 			return false;
 		}
 
+		// Changed by hand since we pointed it at us: theirs now, not ours to undo.
+		if ( ! $this->still_ours( isset( $mail['recipient'] ) ? $mail['recipient'] : '' ) ) {
+			return 0;
+		}
+
 		// Putting a mail tag BACK is allowed; only changing one is refused. This is
 		// restoring what the site owner had, not choosing it for them.
 		$mail['recipient'] = (string) $snapshot['recipient'];
 
 		$form->set_properties( array( 'mail' => $mail ) );
 
-		return (bool) $form->save();
+		return $form->save() ? 1 : false;
 	}
 }

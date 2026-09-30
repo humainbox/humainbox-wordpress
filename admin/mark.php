@@ -36,8 +36,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $humainbox_mark_size = isset( $humainbox_mark_size ) ? absint( $humainbox_mark_size ) : 30;
+
+/*
+ | Beside the page title the mark needs nudging onto the text's baseline and a gap
+ | before the word. Inside the route node it must have neither: an inline style beats
+ | the stylesheet, and the 8px gap pushed the mark off-centre in its box. So the
+ | nudge is only written where the title asks for it — the default.
+ */
+$humainbox_mark_inline = ! isset( $humainbox_mark_centered ) || ! $humainbox_mark_centered;
 ?>
-<svg width="<?php echo esc_attr( $humainbox_mark_size ); ?>" height="<?php echo esc_attr( $humainbox_mark_size ); ?>" viewBox="0 0 100 100" aria-hidden="true" focusable="false" style="vertical-align:-6px;margin-right:8px">
+<svg width="<?php echo esc_attr( $humainbox_mark_size ); ?>" height="<?php echo esc_attr( $humainbox_mark_size ); ?>" viewBox="0 0 100 100" aria-hidden="true" focusable="false"<?php echo $humainbox_mark_inline ? ' style="vertical-align:-6px;margin-right:8px"' : ''; ?>>
 	<circle cx="34" cy="18" r="3.8" fill="#C9C1B3"/><circle cx="50" cy="18" r="3.8" fill="#C9C1B3"/><circle cx="66" cy="18" r="3.8" fill="#C9C1B3"/>
 	<circle cx="18" cy="34" r="3.8" fill="#C9C1B3"/><circle cx="34" cy="34" r="3.8" fill="#C9C1B3"/><circle cx="66" cy="34" r="3.8" fill="#C9C1B3"/><circle cx="82" cy="34" r="3.8" fill="#C9C1B3"/>
 	<circle cx="18" cy="50" r="3.8" fill="#C9C1B3"/><circle cx="34" cy="50" r="3.8" fill="#C9C1B3"/><circle cx="50" cy="50" r="3.8" fill="#C9C1B3"/><circle cx="66" cy="50" r="3.8" fill="#C9C1B3"/><circle cx="82" cy="50" r="3.8" fill="#C9C1B3"/>

@@ -2,30 +2,19 @@
 #
 # ⚠️ EVERY ONE OF THESE WAS IN THE PLUGIN WHEN PLUGIN CHECK WAS FIRST RUN AGAINST IT,
 # and between them they produced 41 of the 44 findings — including the only two errors.
-# None of it is a bug in the plugin; all of it is a bug in what we were shipping.
 #
-#   bin/review-check.php  a developer CLI script. Plugin Check reads it as plugin code,
-#                         so its bare top-level variables became "non-prefixed globals"
-#                         and its echo of a local array became unescaped output.
-#   .gitignore            "Hidden files are not permitted."
-#   SUBMISSION.md
-# ⚠️ README.md TOO, AND FOR THE SAME REASON SUBMISSION.md IS HERE: Plugin Check reports
-# "Unexpected markdown file in plugin root." The repository's README is written for
-# somebody reading the source on GitHub; readme.txt is the one wordpress.org renders.
-# Two audiences, two files, and only one of them belongs in the download.
-README.md
-# The listing artwork. wordpress.org serves these from the repository's own assets/
-# directory, NOT from the plugin — shipping them would put 55KB of PNG on every
-# install to draw a page nobody sees from inside their dashboard.
-assets         "Unexpected markdown file in plugin root."
-#
-# The distributed plugin is the six files that do the work, plus readme and licence.
+#   bin/            developer CLI scripts. Plugin Check reads them as plugin code.
+#   .gitignore      "Hidden files are not permitted."
+#   README.md,
+#   SUBMISSION.md   "Unexpected markdown file in plugin root." readme.txt is the one
+#                   wordpress.org renders; README.md is for somebody reading the source.
+#   assets/         the listing artwork. wordpress.org serves it from the SVN assets/
+#                   directory, not from the plugin — shipping it would put PNGs on every
+#                   install to draw a page nobody sees from inside their dashboard.
+.git
 .gitignore
 .distignore
-.git
 bin
+README.md
 SUBMISSION.md
-# The listing artwork. wordpress.org serves these from the repository's own assets/
-# directory, NOT from the plugin — shipping them would put 55KB of PNG on every
-# install to draw a page nobody sees from inside their dashboard.
 assets

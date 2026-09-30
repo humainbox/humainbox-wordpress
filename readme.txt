@@ -1,6 +1,6 @@
 === Humainbox ===
 Contributors: humainbox
-Tags: contact form, spam, antispam, form notifications, email
+Tags: spam, anti-spam, contact form, captcha alternative, form notifications
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -8,57 +8,68 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-See where every contact form on your site sends its notifications, then point them at one address to stop spam without losing real leads.
+Stop contact form spam, including AI-written messages, without a CAPTCHA. Connects Contact Form 7, WPForms and Gravity Forms to Humainbox.
 
 == Description ==
 
-**Two things, and the first one is free, works on its own, and needs no account.**
+**Humainbox stops spam from reaching you through your website's contact forms — including the new kind, written by AI, that walks straight past CAPTCHAs and keyword filters. Real enquiries still reach you, and nothing is ever deleted.**
 
-= 1. Find out where your forms actually send =
+This plugin connects your forms to Humainbox in a few clicks, and shows you where every form on your site sends its enquiries today.
 
-A site picks up forms over the years. One in the theme, one a plugin added, one the
-last agency built, each with its own notification settings on its own screen. Nobody
-remembers which is which, and "who gets the enquiries from that form" is a question
-most site owners cannot answer without opening a dozen screens.
+= Why contact form spam got worse =
 
-This plugin answers it in one table: every form, from every supported form plugin, and
-the address each one currently sends its notifications to. It makes no network
-requests, stores nothing but what you type, and needs no account with anybody.
+Spam used to be easy to spot: broken English, a dozen links, "SEO services". Today it is written by AI. It reads like a real person, mentions your business by name, and passes every CAPTCHA, honeypot and keyword list — because it was designed to.
 
-It will also tell you when a form notifies **nobody** — a contact form that quietly
-accepts submissions and tells no one is the most expensive thing on a website, and it
-is commoner than it sounds.
+The usual fixes cost you real customers instead. A CAPTCHA makes genuine visitors give up before they press send. A stricter filter starts catching real enquiries, and a lost lead is silent: you only find out when somebody asks why you never replied.
 
-= 2. Point them somewhere better, in one action =
+= How Humainbox works =
 
-If your forms are collecting more spam than leads, the usual fixes make the
-problem worse in a way nobody measures: a CAPTCHA turns visitors away and an
-aggressive filter starts eating real ones, and a lost lead is silent. You only find out
-when somebody asks why you never replied.
+1. **Your form sends to Humainbox.** Each form sends its notification email to your own Humainbox address instead of straight to your inbox. That is the only change — nothing is added to your website, and your visitors see no difference.
+2. **Humainbox checks every submission.** Machine-written spam is held back. Each held message comes with the reason it was held.
+3. **Real enquiries reach you.** They are forwarded to the people you choose, with the visitor's own address set as the reply address — so pressing Reply answers the visitor, exactly as before.
 
-Humainbox is a service that sits between a contact form and the mailbox behind it. It
-checks each submission, holds back the ones written by a machine, and forwards the real
-enquiries to whoever should answer them. Nothing goes on your site: you change one
-field — the address a form sends its notifications to — and this plugin changes that
-field on as many forms as you like at once, keeping a copy of every original.
+**Held is not deleted.** Anything Humainbox holds stays readable in your Humainbox panel, and one click sends it on.
 
-If you use Humainbox, it will also point the forms you choose at your Humainbox address
-in one action — and keep a copy of what each one said before, so you can put them back
-just as easily.
+= What it holds back, and what always reaches you =
 
-= Changing the address does not start blocking anything =
+**Held back as spam:**
 
-A new Humainbox inbox begins in dry run. Every submission is forwarded exactly as it is
-today while the service records what it would have held, and you decide after a week of
-your own mail. So pointing a live form at it is a change you can watch before it does
-anything — and the address that form used before is saved here either way.
+* SEO, link-building and "rank higher on Google" offers
+* Web design, app and offshore development pitches
+* Crypto, traffic and directory-listing schemes
+* Template messages sent to thousands of sites at once
+* All of the above when written fluently by AI — the kind CAPTCHAs no longer stop
 
-= It is not part of your site's request handling =
+**Always reaches you:**
 
-This plugin writes a setting and gets out of the way. It adds nothing to your pages, no
-scripts, no styles, no credits, no links. Deactivate it or delete it and your forms
-carry on exactly as they are, because the address lives in your form plugin's own
-settings, not here.
+* Enquiries, quote requests and bookings
+* Complaints and support questions
+* Job applications, press and partnership approaches
+* Suppliers introducing themselves
+* Anything Humainbox is unsure about — when in doubt, it delivers
+
+= Safe from the first minute =
+
+* **Nothing is blocked in the first week.** Every new Humainbox inbox starts in *dry run*: every submission is still delivered to you, while Humainbox shows you what it would have held. You decide to switch filtering on once you have seen it work on your own mail.
+* **Every change can be undone.** Before this plugin changes a form, it saves the address the form used. One button puts it back.
+* **A test before anything depends on it.** One button sends a test message to your Humainbox address, the same way your forms send theirs. It also tells you if your site cannot send email at all — which would mean your forms have not been delivering either.
+
+= What this plugin does =
+
+* **Lists every form** from Contact Form 7, WPForms and Gravity Forms, and the address each one sends its enquiries to. This part works without an account, and warns you about any form that notifies nobody.
+* **Points the forms you choose at Humainbox** in one action, instead of opening each form's settings one by one.
+* **Keeps the addresses it replaced** and restores them on request.
+* **Leaves alone what it should not change** — for example, the "copy of your message" email that goes back to the visitor.
+
+It adds nothing to your pages: no scripts, no styles, no CAPTCHA, no links. It works only on its own settings screen, under Settings → Humainbox.
+
+= Getting started =
+
+1. Install and activate the plugin, then open **Settings → Humainbox**. The table shows your forms and where each one sends today.
+2. Create a free Humainbox account at humainbox.com — no card needed.
+3. In Humainbox, choose who should receive your enquiries. Anyone other than you gets one email asking them to confirm; until they do, their mail waits in your Humainbox panel.
+4. Copy your inbox address (under **Inboxes**), paste it into the plugin and press **Send a test message**. It should appear in your Humainbox panel within a minute.
+5. Tick the forms you want protected and press **Connect selected forms to Humainbox**.
 
 = Supported form plugins =
 
@@ -66,25 +77,28 @@ settings, not here.
 * WPForms and WPForms Lite
 * Gravity Forms
 
-Forms from other plugins are not listed. The table will say which of the three are
-active on your site so you can tell the difference between "no forms" and "not
-supported".
+Other form plugins are not listed and are never touched. You can still connect them by pasting your Humainbox address into their notification settings by hand — the steps for each are at https://humainbox.com/integrations
 
-= What Humainbox is =
+= About Humainbox =
 
-Humainbox is a paid service that sits between a contact form and the mailbox behind it.
-It checks each submission, holds the ones written by a machine, and forwards the real
-enquiries to whoever should answer them. This plugin is a convenience for setting it up
-across several forms at once; the service works exactly the same if you change the
-addresses by hand.
+Humainbox is an online service run by Reaktör Teknoloji. It has a free plan for one inbox and paid plans for teams and agencies. Everything in this plugin works the same on every plan.
 
 == External services ==
 
-This plugin does not contact any external service. It makes no network requests at all.
+This plugin makes no network requests. It does not call any API, load anything from a
+remote server or send any data about your site in the background.
 
 The address you enter is stored in your own database and written into your own form
-plugins' settings. Nothing about your site, your forms or your visitors is sent
-anywhere by this plugin.
+plugins' settings.
+
+Two things do result in email being sent, both only when you press a button:
+
+* **Send a test message** sends one email, through your site's own mail (wp_mail), to the
+  Humainbox address you saved. It contains your site's address and the display name of
+  the logged-in user who pressed the button.
+* **Connect selected forms to Humainbox** changes where those forms send their notifications.
+  From then on, each form submission — the fields your visitors fill in — is emailed by
+  your form plugin to your Humainbox address instead of to the address it used before.
 
 Mail sent by your forms goes wherever the address you choose points — that is what
 changing a notification recipient means, and it is true of any address you type into
@@ -96,65 +110,66 @@ Humainbox service handles the message under its own terms and privacy policy:
 
 == Frequently Asked Questions ==
 
+= Is this a spam filter plugin? =
+
+The filtering is done by the Humainbox service, not inside WordPress. That is why it adds nothing to your pages and does not slow your site down. This plugin connects your forms to it and keeps a way back.
+
+= Does it add a CAPTCHA? =
+
+No. Your visitors fill in your forms exactly as they do today.
+
 = Do I need a Humainbox account? =
 
-Not for the inventory. Listing your forms and seeing where each one sends works with no
-account, no address entered and no network request of any kind. You need an address
-only if you want to point forms at one.
+Not to see the list of your forms and where each one sends. You need an account, and the inbox address it gives you, to protect your forms from spam.
 
-= What does a Humainbox account cost? =
+= How much does it cost? =
 
-It is free to open and free while you evaluate, with no card. There are paid plans for
-larger sites; what they cost is on humainbox.com and this plugin does not ask you for
-anything. Nothing on this screen changes until you paste in an address and press a
-button.
+The plugin is free. Humainbox has a free plan for one inbox, and no card is needed to open an account. Paid plans for teams and agencies are listed on humainbox.com.
 
-= What happens to my original addresses? =
+= What if a real enquiry is held by mistake? =
 
-The first time this plugin changes a form, it records every notification on it and
-where each one was addressed. Those are shown on the settings screen and can be put
-back with one action — each notification to exactly the address it had, not to a
-summary of them.
+It is not lost. Held messages stay readable in your Humainbox panel, each with the reason it was held, and one click sends it on. In the first week nothing is held at all — you only see what would have been.
 
-= What happens if I delete the plugin? =
+= Who receives the enquiries after the change? =
 
-Your forms are left exactly as they are — whatever address they currently deliver to
-keeps working. The plugin's own settings are removed. The record of original addresses
-is deliberately kept, so that reinstalling still lets you put things back; if you want
-it gone, restore your forms first and the record clears itself.
+The people you set as recipients in Humainbox — not the addresses that were in the form before. If a form currently sends to more than one address, the plugin lists them so you can add each one in Humainbox first.
+
+If a form also sends a copy (Cc or Bcc) to someone, that copy is left as it is and the plugin points it out: it does not pass through Humainbox, so it is not filtered.
+
+= When I press Reply, who gets my answer? =
+
+The visitor who filled in the form, just as before. Humainbox sets their address as the reply address on every enquiry it forwards.
+
+= Can I undo it? =
+
+Yes. The first time the plugin changes a form, it saves where that form used to send, and shows it in the **Before Humainbox** column of the forms table. Tick the form and press **Restore selected to original address**.
+
+If you have changed a form by hand since, restoring leaves your change alone: only forms that still send to Humainbox are put back.
+
+= What happens if I deactivate or delete the plugin? =
+
+Your forms keep working exactly as they are, because the address is stored in your form plugin's own settings. The list of original addresses is deliberately kept, so reinstalling still lets you put things back. To remove it, restore your forms first.
 
 = Does it change every notification on a form? =
 
-Only the ones addressed to a fixed address — that, or the form plugin's own tag for
-your site's admin address, which always resolves to the same place.
+No, only the ones that go to you. Notifications addressed to the visitor who filled in the form — the "copy of your message" email — or to someone worked out for each submission, such as the author of a listing, are never changed. Changing them would send you the visitor's receipt instead of them.
 
-Notifications addressed with a tag that is worked out for each submission are left
-exactly as they are, in all three plugins. Those are the "a copy of your enquiry"
-mails that go back to the person who filled the form in, and notifications routed to
-the author of whatever they were enquiring about. Overwriting one of those does not
-redirect it to you — it sends you somebody else's receipt and sends them nothing.
+If a form only has notifications like that, it is listed with the reason and cannot be selected.
 
-If every notification on a form is addressed that way, the form is listed with the
-reason and no checkbox, rather than offered and then reported as a failure.
+= Will it work with Elementor, Ninja Forms or Fluent Forms? =
 
-= Will it work with Elementor, Ninja Forms, Fluent Forms? =
-
-Not yet. Those store notification settings differently and this version does not touch
-them rather than touch them badly. Pointing them at an address by hand works exactly the
-same — it is one field in each of their own notification settings, and the menu path for
-each is written out at https://humainbox.com/integrations
+Not in this version — those forms are not listed and never touched. You can still protect them by pasting your Humainbox address into their notification settings by hand. The steps for each are at https://humainbox.com/integrations
 
 = One of my forms says it notifies nobody =
 
-Then it does. A form with no recipient address accepts submissions and tells no one,
-which is the most expensive thing a contact form can do quietly. That is worth fixing
-whether or not you ever use Humainbox.
+Then enquiries from that form are going nowhere. A form with no recipient address accepts submissions and tells no one. It is worth fixing whether or not you use Humainbox.
 
 == Changelog ==
 
 = 1.0.0 =
-* First release. Inventory of Contact Form 7, WPForms and Gravity Forms notification
-  recipients; bulk repointing; restore of original addresses.
+* First release: list Contact Form 7, WPForms and Gravity Forms notification recipients,
+  connect selected forms to Humainbox in one action, send a test message, restore the
+  original addresses.
 
 == Upgrade Notice ==
 

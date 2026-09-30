@@ -69,10 +69,11 @@
 	color: #50575e;
 }
 
-/* The one node that is us. Spent once, on the node the whole screen is about. */
-.humainbox-node-ours .humainbox-node-mark svg { margin-right: 0; vertical-align: 0; }
-
-.humainbox-node-mark {
+/* The one node that is us. Spent once, on the node the whole screen is about.
+   ⚠️ Scoped to .humainbox-node-ours: written as a bare .humainbox-node-mark, this
+   rule came later than the grey one and tinted all three nodes, so the accent that
+   was meant to single one out singled out nothing. */
+.humainbox-node-ours .humainbox-node-mark {
 	background: #eef7f6;
 	border-color: #aed8d3;
 }
@@ -148,6 +149,19 @@
 
 .humainbox-left-alone { color: #646970; }
 
+/* Something that changes what pointing this form at us means. Under the title, in
+   the reading colour of a description, with an amber rule so it is not skimmed. */
+.humainbox-note {
+	max-width: 46rem;
+	margin: .35em 0 0;
+	padding-left: .6em;
+	border-left: 2px solid #dba617;
+}
+
+/* The test sits directly under the address it checks, not in a section of its own. */
+.humainbox-test { margin: -.5em 0 2em; }
+.humainbox-test .description { display: inline-block; max-width: 40rem; margin-left: .5em; vertical-align: middle; }
+
 /* The one thing that still gets a measure: running text. A 1900px line is
    unreadable; a 1900px table is a table. */
 .humainbox-prose { max-width: 46rem; }
@@ -156,3 +170,51 @@
 	.humainbox-link { flex-basis: 100%; width: 100%; margin: .5em 0; }
 	.humainbox-node { flex-basis: 100%; text-align: left; }
 }
+
+/* ── What it stops, what it lets through ───────────────────────────────────── */
+
+.humainbox-explain {
+	margin: 0 0 1.5em;
+	padding: .75em 1.1em;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+}
+
+.humainbox-explain summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.humainbox-explain-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.5em;
+	margin: 1em 0 .5em;
+}
+
+.humainbox-explain h3 { margin: 0 0 .5em; font-size: 13px; }
+.humainbox-explain ul { margin: 0 0 0 1.25em; list-style: disc; }
+.humainbox-explain li { margin-bottom: .3em; }
+
+/* The two headings carry the same dots as the table's status column. */
+.humainbox-explain-held::before,
+.humainbox-explain-through::before {
+	content: "";
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-right: 6px;
+	border-radius: 50%;
+	vertical-align: 1px;
+}
+.humainbox-explain-held::before { background: #dba617; }
+.humainbox-explain-through::before { background: #00a32a; }
+
+@media screen and (max-width: 782px) {
+	.humainbox-explain-grid { grid-template-columns: 1fr; }
+}
+
+/* Connect and restore, side by side under the tables they act on. */
+.humainbox-actions .button + .button { margin-left: .5em; }

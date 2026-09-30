@@ -42,26 +42,37 @@
 	 * reversible — the original address is saved before anything is written — but it
 	 * happens on a production site the moment the button is pressed, and the count is
 	 * the part somebody most often gets wrong.
+	 *
+	 * Two buttons share the form, so the question depends on which was pressed:
+	 * event.submitter, with the connect wording as the fallback because connect is
+	 * what Enter presses.
 	 */
-	var form = document.getElementById( 'humainbox-apply-form' );
+	var form = document.getElementById( 'humainbox-forms-form' );
 
 	if ( ! form || typeof window.humainboxL10n === 'undefined' ) {
 		return;
 	}
 
 	form.addEventListener( 'submit', function ( event ) {
-		var chosen = form.querySelectorAll( '.humainbox-form:checked' ).length;
+		var l10n    = window.humainboxL10n;
+		var chosen  = form.querySelectorAll( '.humainbox-form:checked' ).length;
+		var restore = event.submitter && 'restore' === event.submitter.value;
+		var question;
 
 		if ( 0 === chosen ) {
 			event.preventDefault();
-			window.alert( window.humainboxL10n.nothingSelected );
+			window.alert( l10n.nothingSelected );
 
 			return;
 		}
 
-		var question = ( 1 === chosen ? window.humainboxL10n.confirmOne : window.humainboxL10n.confirmMany )
-			.replace( '%1$d', chosen )
-			.replace( '%2$s', form.dataset.humainboxAddress || '' );
+		if ( restore ) {
+			question = 1 === chosen ? l10n.restoreOne : l10n.restoreMany.replace( '%1$d', chosen );
+		} else {
+			question = ( 1 === chosen ? l10n.confirmOne : l10n.confirmMany )
+				.replace( '%1$d', chosen )
+				.replace( '%2$s', form.dataset.humainboxAddress || '' );
+		}
 
 		if ( ! window.confirm( question ) ) {
 			event.preventDefault();

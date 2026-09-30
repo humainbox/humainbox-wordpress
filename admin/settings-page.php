@@ -49,8 +49,11 @@ foreach ( $inventory as $humainbox_group ) {
 	$humainbox_active[] = $humainbox_group;
 	$humainbox_total   += count( $humainbox_group['forms'] );
 
+	// Asked of the adapter, not worked out from the recipient line: that line joins
+	// every notification, and a form rightly keeping its visitor-copy never equals
+	// the saved address however completely it has been pointed at us.
 	foreach ( $humainbox_group['forms'] as $humainbox_form ) {
-		if ( '' !== $humainbox_address && $humainbox_form['recipient'] === $humainbox_address ) {
+		if ( isset( $humainbox_form['routing'] ) && 'all' === $humainbox_form['routing'] ) {
 			++$humainbox_pointed;
 		}
 	}
@@ -79,11 +82,55 @@ foreach ( $inventory as $humainbox_group ) {
 	<p class="description humainbox-prose" style="margin:.25em 0 1.25em">
 		<?php
 		echo esc_html__(
-			'Humainbox checks every form submission and holds back the ones a machine wrote, so the real leads still reach you.',
+			'Humainbox stops spam — including messages written by AI — from reaching you through your contact forms, without a CAPTCHA. Real enquiries still reach you, and nothing is deleted.',
 			'humainbox'
 		);
 		?>
 	</p>
+
+	<?php
+	/*
+	 | What it stops and what it lets through, side by side.
+	 |
+	 | Somebody who has never heard of Humainbox needs one answer before anything else
+	 | on this screen makes sense: "what will it do to my enquiries?". Two short lists
+	 | answer it faster than a paragraph. Every item is taken from what the classifier
+	 | is actually told to do — ClassificationPrompt in the service — and nothing here
+	 | promises more than that.
+	 |
+	 | A <details>, open only until an address is saved: after that it is reference,
+	 | and a settings screen that keeps explaining the product to somebody already
+	 | using it is a brochure.
+	 */
+	?>
+	<details class="humainbox-explain" <?php echo '' === $settings['address'] ? 'open' : ''; ?>>
+		<summary><?php echo esc_html__( 'What does Humainbox stop — and what does it let through?', 'humainbox' ); ?></summary>
+		<div class="humainbox-explain-grid">
+			<div>
+				<h3 class="humainbox-explain-held"><?php echo esc_html__( 'Held back as spam', 'humainbox' ); ?></h3>
+				<ul>
+					<li><?php echo esc_html__( 'SEO, link-building and "rank higher on Google" offers', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Web design, app and offshore development pitches', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Crypto, traffic and directory-listing schemes', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Template messages sent to thousands of sites at once', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'All of the above when written fluently by AI — the kind CAPTCHAs no longer stop', 'humainbox' ); ?></li>
+				</ul>
+			</div>
+			<div>
+				<h3 class="humainbox-explain-through"><?php echo esc_html__( 'Always reaches you', 'humainbox' ); ?></h3>
+				<ul>
+					<li><?php echo esc_html__( 'Enquiries, quote requests and bookings', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Complaints and support questions', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Job applications, press and partnership approaches', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Suppliers introducing themselves', 'humainbox' ); ?></li>
+					<li><?php echo esc_html__( 'Anything it is unsure about — when in doubt, it delivers', 'humainbox' ); ?></li>
+				</ul>
+			</div>
+		</div>
+		<p class="description humainbox-prose">
+			<?php echo esc_html__( 'Held messages are never deleted: they stay readable in your Humainbox panel with the reason they were held, and one click sends them on. It adds no CAPTCHA and changes nothing your visitors see.', 'humainbox' ); ?>
+		</p>
+	</details>
 
 	<?php if ( $notice ) : ?>
 		<div class="notice notice-<?php echo esc_attr( $notice['type'] ); ?> is-dismissible">
@@ -112,10 +159,10 @@ foreach ( $inventory as $humainbox_group ) {
 		?>
 		<div class="notice notice-info inline" style="margin:0 0 1.5em;padding:.75em 1em">
 			<p class="humainbox-prose" style="margin:.25em 0 .75em">
-				<strong><?php echo esc_html__( 'You do not need one of these to use this page.', 'humainbox' ); ?></strong>
-				<?php echo esc_html__( 'The table below works without an address and without contacting anything.', 'humainbox' ); ?>
+				<strong><?php echo esc_html__( 'New to Humainbox?', 'humainbox' ); ?></strong>
+				<?php echo esc_html__( 'Your forms send their enquiries to a Humainbox address instead of straight to you. Humainbox holds back the spam and forwards every real enquiry to the people you choose. Nothing changes on your website.', 'humainbox' ); ?>
 			</p>
-			<p style="margin:0 0 .5em"><?php echo esc_html__( 'If you want one:', 'humainbox' ); ?></p>
+			<p style="margin:0 0 .5em"><?php echo esc_html__( 'To set it up:', 'humainbox' ); ?></p>
 			<ol class="humainbox-prose" style="margin:0 0 .75em 1.5em">
 				<li>
 					<?php /* The link is its own element rather than a %s inside a
@@ -123,14 +170,16 @@ foreach ( $inventory as $humainbox_group ) {
 					         string is the shape every escaping sniff flags, and the one
 					         a reviewer stops on even when it is safe. */ ?>
 					<a href="https://humainbox.com" target="_blank" rel="noopener noreferrer">humainbox.com</a>
-					&mdash; <?php echo esc_html__( 'open an account. It is free to start and there is no card.', 'humainbox' ); ?>
+					&mdash; <?php echo esc_html__( 'create a free account. No card needed.', 'humainbox' ); ?>
 				</li>
-				<li><?php echo esc_html__( 'Copy the address it generates for you — it is under Inboxes.', 'humainbox' ); ?></li>
-				<li><?php echo esc_html__( 'Paste it below, then tick the forms you want to point at it.', 'humainbox' ); ?></li>
+				<li><?php echo esc_html__( 'Choose who should receive your enquiries. Anyone other than you gets one email asking them to confirm.', 'humainbox' ); ?></li>
+				<li><?php echo esc_html__( 'Copy your inbox address (under Inboxes), paste it below and send a test message.', 'humainbox' ); ?></li>
+				<li><?php echo esc_html__( 'Tick the forms you want protected and connect them.', 'humainbox' ); ?></li>
 			</ol>
+			<p class="description" style="margin:0 0 .5em"><?php echo esc_html__( 'You do not need an account to see the table of your forms below.', 'humainbox' ); ?></p>
 			<p style="margin:0">
 				<a href="https://humainbox.com/integrations/wordpress" target="_blank" rel="noopener noreferrer">
-					<?php echo esc_html__( 'What it does with a submission', 'humainbox' ); ?>
+					<?php echo esc_html__( 'How Humainbox decides what is spam', 'humainbox' ); ?>
 				</a>
 			</p>
 		</div>
@@ -157,7 +206,7 @@ foreach ( $inventory as $humainbox_group ) {
 					<p class="description">
 						<?php
 						echo esc_html__(
-							'Shown in your Humainbox account under Inboxes. Saving it here changes nothing on its own.',
+							'Your inbox address, from your Humainbox account under Inboxes. It ends in @in.humainbox.com. Saving it does not change any form yet.',
 							'humainbox'
 						);
 						?>
@@ -168,6 +217,20 @@ foreach ( $inventory as $humainbox_group ) {
 
 		<?php submit_button( __( 'Save address', 'humainbox' ) ); ?>
 	</form>
+
+	<?php if ( '' !== $humainbox_address ) : ?>
+		<?php /* Its own form, because forms cannot nest, and right under the address it
+		         checks: the one test that catches a mistyped address before any
+		         enquiry is sent into it. See Humainbox_Settings::handle_test(). */ ?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="humainbox-test">
+			<?php wp_nonce_field( 'humainbox_test' ); ?>
+			<input type="hidden" name="action" value="humainbox_test">
+			<?php submit_button( __( 'Send a test message', 'humainbox' ), 'secondary', 'submit', false ); ?>
+			<span class="description">
+				<?php echo esc_html__( 'Sends one email to the address above, the same way your forms do. It should appear in your Humainbox panel within a minute — if it does not, check the address before connecting any form.', 'humainbox' ); ?>
+			</span>
+		</form>
+	<?php endif; ?>
 
 	<h2>
 		<?php echo esc_html__( 'Forms on this site', 'humainbox' ); ?>
@@ -181,7 +244,7 @@ foreach ( $inventory as $humainbox_group ) {
 			<?php
 			if ( empty( $humainbox_active ) ) {
 				echo esc_html__(
-					'None of the form plugins this version understands are active here. Nothing is wrong — your forms are simply built with something else, and their notification settings are unchanged.',
+					'No Contact Form 7, WPForms or Gravity Forms forms were found on this site. If your forms are built with something else, you can still protect them: paste your Humainbox address into their notification settings by hand.',
 					'humainbox'
 				);
 			} else {
@@ -200,28 +263,67 @@ foreach ( $inventory as $humainbox_group ) {
 				<path stroke-linecap="round" stroke-linejoin="round" d="M9.5 12l1.8 1.8 3.5-3.6"/>
 			</svg>
 			<span>
-				<strong><?php echo esc_html__( 'Pointing a form at Humainbox does not hold anything back to begin with.', 'humainbox' ); ?></strong>
+				<strong><?php echo esc_html__( 'Nothing is blocked in the first week.', 'humainbox' ); ?></strong>
 				<?php
 				echo esc_html__(
-					'A new inbox starts in dry run: every submission is forwarded exactly as it is today, while Humainbox records what it would have held. You decide after a week of your own mail. The address each form used before is saved here either way, and putting it back is one action.',
+					'A new Humainbox inbox starts in dry run: every enquiry is still delivered, while Humainbox shows you what it would have held as spam. You switch filtering on when you are ready. From now on, enquiries go to the recipients you set in Humainbox — anyone who has not yet confirmed their address gets nothing until they do. Each form\'s current address is saved here, and one button puts it back.',
 					'humainbox'
 				);
 				?>
 			</span>
 		</div>
 
+		<?php
+		/*
+		 | ⚠️ ONE TABLE, TWO ACTIONS.
+		 |
+		 | Undo used to be its own section below, with its own table listing the same
+		 | forms again. Every form appeared twice, and the one question somebody has
+		 | about a form — where does it go now, where did it go before, is it
+		 | protected — was split across two tables they had to match up by title.
+		 | Now each row carries its original address, and the two buttons act on
+		 | whatever is ticked.
+		 |
+		 | One admin_post action for both, with the button deciding which: a form can
+		 | only carry one nonce, and two handlers sharing one nonce would be two
+		 | handlers each trusting a check made for the other.
+		 */
+		$humainbox_shown = array();
+
+		/*
+		 | "[_site_admin_email]" means nothing to somebody who did not build the form.
+		 | The two tags this plugin will change resolve to one known address, so the
+		 | screen can say which — the rest are left as they are and left unexplained.
+		 */
+		$humainbox_tag_note = function ( $recipient ) {
+			foreach ( array( '[_site_admin_email]', '{admin_email}' ) as $tag ) {
+				if ( false !== strpos( (string) $recipient, $tag ) ) {
+					return '<p class="description">' . esc_html(
+						sprintf(
+							/* translators: 1: a form plugin's tag, 2: the site's admin email address. */
+							__( '%1$s is your site\'s admin email: %2$s', 'humainbox' ),
+							$tag,
+							get_bloginfo( 'admin_email' )
+						)
+					) . '</p>';
+				}
+			}
+
+			return '';
+		};
+		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-			id="humainbox-apply-form"
+			id="humainbox-forms-form"
 			data-humainbox-address="<?php echo esc_attr( $humainbox_address ); ?>">
-			<?php wp_nonce_field( 'humainbox_apply' ); ?>
-			<input type="hidden" name="action" value="humainbox_apply">
+			<?php wp_nonce_field( 'humainbox_forms' ); ?>
+			<input type="hidden" name="action" value="humainbox_forms">
 
 			<?php foreach ( $humainbox_active as $humainbox_group ) : ?>
 				<?php if ( empty( $humainbox_group['forms'] ) ) { continue; } ?>
 
 				<h3><?php echo esc_html( $humainbox_group['label'] ); ?></h3>
 
-				<table class="widefat striped">
+				<table class="widefat striped humainbox-forms">
 					<thead>
 						<tr>
 							<td class="check-column">
@@ -235,8 +337,9 @@ foreach ( $inventory as $humainbox_group ) {
 									id="humainbox-all-<?php echo esc_attr( $humainbox_group['slug'] ); ?>">
 							</td>
 							<th scope="col"><?php echo esc_html__( 'Form', 'humainbox' ); ?></th>
-							<th scope="col"><?php echo esc_html__( 'Notifications go to', 'humainbox' ); ?></th>
-							<th scope="col"><?php echo esc_html__( 'Status', 'humainbox' ); ?></th>
+							<th scope="col"><?php echo esc_html__( 'Sends enquiries to', 'humainbox' ); ?></th>
+							<th scope="col"><?php echo esc_html__( 'Before Humainbox', 'humainbox' ); ?></th>
+							<th scope="col"><?php echo esc_html__( 'Spam filter', 'humainbox' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -244,15 +347,20 @@ foreach ( $inventory as $humainbox_group ) {
 							<?php
 							$humainbox_token      = Humainbox_Forms::key( $humainbox_group['slug'], $humainbox_form['id'] );
 							$humainbox_field_id   = 'humainbox-form-' . sanitize_html_class( $humainbox_group['slug'] . '-' . $humainbox_form['id'] );
-							$humainbox_is_ours    = '' !== $humainbox_address && $humainbox_form['recipient'] === $humainbox_address;
+							$humainbox_routing    = isset( $humainbox_form['routing'] ) ? $humainbox_form['routing'] : 'none';
 							$humainbox_nowhere    = '' === $humainbox_form['recipient'];
 							// Absent means changeable: an adapter that has not learned to
 							// say otherwise must not have its forms silently withheld.
 							$humainbox_changeable = ! isset( $humainbox_form['changeable'] ) || $humainbox_form['changeable'];
+							$humainbox_original   = isset( $backup[ $humainbox_token ] ) ? $backup[ $humainbox_token ] : null;
+							// A form this plugin changed can always be put back, even one that
+							// has since become something it would not change today.
+							$humainbox_selectable = $humainbox_changeable || null !== $humainbox_original;
+							$humainbox_shown[]    = $humainbox_token;
 							?>
 							<tr>
 								<th scope="row" class="check-column">
-									<?php if ( $humainbox_changeable ) : ?>
+									<?php if ( $humainbox_selectable ) : ?>
 										<label class="screen-reader-text" for="<?php echo esc_attr( $humainbox_field_id ); ?>">
 											<?php
 											printf(
@@ -282,6 +390,11 @@ foreach ( $inventory as $humainbox_group ) {
 											<?php echo esc_html( $humainbox_form['reason'] ); ?>
 										</p>
 									<?php endif; ?>
+									<?php if ( $humainbox_changeable && ! empty( $humainbox_form['notes'] ) ) : ?>
+										<?php foreach ( $humainbox_form['notes'] as $humainbox_note ) : ?>
+											<p class="description humainbox-note"><?php echo esc_html( $humainbox_note ); ?></p>
+										<?php endforeach; ?>
+									<?php endif; ?>
 								</td>
 								<td>
 									<?php if ( $humainbox_nowhere ) : ?>
@@ -294,23 +407,47 @@ foreach ( $inventory as $humainbox_group ) {
 										</span>
 									<?php else : ?>
 										<code><?php echo esc_html( $humainbox_form['recipient'] ); ?></code>
+										<?php echo $humainbox_tag_note( $humainbox_form['recipient'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from esc_html() in $humainbox_tag_note. ?>
+										<?php if ( ! empty( $humainbox_form['aside'] ) ) : ?>
+											<p class="description"><?php echo esc_html__( 'Also emails a copy to an address from the form itself, usually the visitor — left as it is.', 'humainbox' ); ?></p>
+										<?php endif; ?>
 									<?php endif; ?>
 								</td>
 								<td>
-									<?php if ( ! $humainbox_changeable ) : ?>
+									<?php if ( null === $humainbox_original ) : ?>
+										<span class="humainbox-left-alone" aria-label="<?php echo esc_attr__( 'Not changed by this plugin', 'humainbox' ); ?>">&mdash;</span>
+									<?php else : ?>
+										<code><?php echo esc_html( '' !== $humainbox_original['recipient'] ? $humainbox_original['recipient'] : __( '(nowhere)', 'humainbox' ) ); ?></code>
+										<?php echo $humainbox_tag_note( $humainbox_original['recipient'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from esc_html() in $humainbox_tag_note. ?>
+										<?php if ( 'none' === $humainbox_routing ) : ?>
+											<?php /* Said before the button, not only after it: restore
+											         will leave this one alone, and why. */ ?>
+											<p class="description humainbox-note"><?php echo esc_html__( 'Changed by hand since — restoring leaves it as it is.', 'humainbox' ); ?></p>
+										<?php endif; ?>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( ! $humainbox_changeable && 'all' !== $humainbox_routing ) : ?>
 										<span class="humainbox-left-alone">
 											<span class="humainbox-dot humainbox-dot-held" aria-hidden="true"></span>
-											<?php echo esc_html__( 'Left alone', 'humainbox' ); ?>
+											<?php echo esc_html__( 'Cannot change here', 'humainbox' ); ?>
 										</span>
-									<?php elseif ( $humainbox_is_ours ) : ?>
+									<?php elseif ( 'all' === $humainbox_routing ) : ?>
 										<span>
 											<span class="humainbox-dot humainbox-dot-live" aria-hidden="true"></span>
-											<?php echo esc_html__( 'Humainbox', 'humainbox' ); ?>
+											<?php echo esc_html__( 'Connected', 'humainbox' ); ?>
+										</span>
+									<?php elseif ( 'some' === $humainbox_routing ) : ?>
+										<?php /* Our address sits beside somebody else's, so that person
+										         still gets every submission unfiltered. */ ?>
+										<span>
+											<span class="humainbox-dot humainbox-dot-held" aria-hidden="true"></span>
+											<?php echo esc_html__( 'Partly connected', 'humainbox' ); ?>
 										</span>
 									<?php else : ?>
 										<span class="humainbox-left-alone">
 											<span class="humainbox-dot" aria-hidden="true"></span>
-											<?php echo esc_html__( 'Unchanged', 'humainbox' ); ?>
+											<?php echo esc_html__( 'Not connected', 'humainbox' ); ?>
 										</span>
 									<?php endif; ?>
 								</td>
@@ -320,30 +457,37 @@ foreach ( $inventory as $humainbox_group ) {
 				</table>
 			<?php endforeach; ?>
 
-			<?php
-			submit_button(
-				__( 'Point selected forms at Humainbox', 'humainbox' ),
-				'primary',
-				'submit',
-				true,
-				// Nothing to point them AT. A button that can only fail is worse than
-				// one that is plainly not available yet.
-				'' === $humainbox_address ? array( 'disabled' => 'disabled' ) : array()
-			);
-			?>
+			<p class="submit humainbox-actions">
+				<?php /* <button>, not submit_button(): the two share one form, and the
+				         clicked button's value is what tells the handler which to do. */ ?>
+				<button type="submit" name="humainbox_do" value="apply" class="button button-primary"
+					<?php disabled( '' === $humainbox_address ); ?>>
+					<?php echo esc_html__( 'Connect selected forms to Humainbox', 'humainbox' ); ?>
+				</button>
+				<?php if ( ! empty( $backup ) ) : ?>
+					<button type="submit" name="humainbox_do" value="restore" class="button">
+						<?php echo esc_html__( 'Restore selected to original address', 'humainbox' ); ?>
+					</button>
+				<?php endif; ?>
+			</p>
 
 			<?php if ( '' === $humainbox_address ) : ?>
-				<p class="description"><?php echo esc_html__( 'Save an address above first.', 'humainbox' ); ?></p>
+				<p class="description"><?php echo esc_html__( 'Save your Humainbox address above first.', 'humainbox' ); ?></p>
 			<?php elseif ( $humainbox_pointed > 0 ) : ?>
 				<p class="description">
 					<?php
 					printf(
-						/* translators: 1: number already pointed at Humainbox, 2: total forms. */
-						esc_html( _n( '%1$d of %2$d already goes to Humainbox.', '%1$d of %2$d already go to Humainbox.', $humainbox_pointed, 'humainbox' ) ),
+						/* translators: 1: number protected by Humainbox, 2: total forms. */
+						esc_html( _n( '%1$d of %2$d form is connected to Humainbox.', '%1$d of %2$d forms are connected to Humainbox.', $humainbox_total, 'humainbox' ) ),
 						esc_html( number_format_i18n( $humainbox_pointed ) ),
 						esc_html( number_format_i18n( $humainbox_total ) )
 					);
 					?>
+				</p>
+			<?php endif; ?>
+			<?php if ( ! empty( $backup ) ) : ?>
+				<p class="description humainbox-prose">
+					<?php echo esc_html__( 'Restoring sends a form\'s enquiries straight to its original address again, without spam protection. Original addresses are kept even if you delete this plugin.', 'humainbox' ); ?>
 				</p>
 			<?php endif; ?>
 		</form>
@@ -358,66 +502,39 @@ foreach ( $inventory as $humainbox_group ) {
 				esc_html( implode( ', ', $humainbox_inactive ) )
 			);
 			?>
-			<?php echo esc_html__( 'Forms built with anything else are not listed, and nothing about them has been touched.', 'humainbox' ); ?>
+			<?php echo esc_html__( 'Forms built with other plugins are not listed and are never touched.', 'humainbox' ); ?>
 		</p>
 	<?php endif; ?>
 
-	<?php if ( ! empty( $backup ) ) : ?>
-		<h2><?php echo esc_html__( 'Putting them back', 'humainbox' ); ?></h2>
-
-		<p class="humainbox-prose">
-			<?php
-			echo esc_html__(
-				'These are the addresses your forms sent to before this plugin changed them. They are kept here, in plain text, for as long as the plugin is installed — copy anything you want to keep before deleting it.',
-				'humainbox'
-			);
-			?>
+	<?php
+	/*
+	 | ⚠️ THE ONE CASE THE TABLE CANNOT SHOW: a saved original for a form that is no
+	 | longer listed — deleted, or its plugin deactivated. It cannot be restored from
+	 | here, but the address it used is still the only record of where its enquiries
+	 | went, so it is shown rather than silently kept out of sight.
+	 */
+	$humainbox_orphans = array_diff_key( $backup, array_flip( isset( $humainbox_shown ) ? $humainbox_shown : array() ) );
+	?>
+	<?php if ( ! empty( $humainbox_orphans ) ) : ?>
+		<h2><?php echo esc_html__( 'Saved addresses for forms no longer here', 'humainbox' ); ?></h2>
+		<p class="description humainbox-prose">
+			<?php echo esc_html__( 'These forms were connected to Humainbox, but have since been deleted or their form plugin is inactive, so they cannot be restored from here. Where they used to send:', 'humainbox' ); ?>
 		</p>
-
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<?php wp_nonce_field( 'humainbox_restore' ); ?>
-			<input type="hidden" name="action" value="humainbox_restore">
-
-			<table class="widefat striped">
-				<thead>
+		<table class="widefat striped">
+			<thead>
+				<tr>
+					<th scope="col"><?php echo esc_html__( 'Form', 'humainbox' ); ?></th>
+					<th scope="col"><?php echo esc_html__( 'Before Humainbox', 'humainbox' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $humainbox_orphans as $humainbox_token => $humainbox_entry ) : ?>
 					<tr>
-						<td class="check-column">
-							<label class="screen-reader-text" for="humainbox-all-restore">
-								<?php echo esc_html__( 'Select all forms', 'humainbox' ); ?>
-							</label>
-							<input type="checkbox" class="humainbox-select-all" id="humainbox-all-restore">
-						</td>
-						<th scope="col"><?php echo esc_html__( 'Form', 'humainbox' ); ?></th>
-						<th scope="col"><?php echo esc_html__( 'Original address', 'humainbox' ); ?></th>
+						<td><strong><?php echo esc_html( '' !== $humainbox_entry['title'] ? $humainbox_entry['title'] : $humainbox_token ); ?></strong></td>
+						<td><code><?php echo esc_html( '' !== $humainbox_entry['recipient'] ? $humainbox_entry['recipient'] : __( '(nowhere)', 'humainbox' ) ); ?></code></td>
 					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ( $backup as $humainbox_token => $humainbox_entry ) : ?>
-						<?php $humainbox_restore_id = 'humainbox-restore-' . sanitize_html_class( str_replace( ':', '-', $humainbox_token ) ); ?>
-						<tr>
-							<th scope="row" class="check-column">
-								<label class="screen-reader-text" for="<?php echo esc_attr( $humainbox_restore_id ); ?>">
-									<?php echo esc_html__( 'Select this form', 'humainbox' ); ?>
-								</label>
-								<input
-									type="checkbox"
-									class="humainbox-form"
-									name="humainbox_forms[]"
-									id="<?php echo esc_attr( $humainbox_restore_id ); ?>"
-									value="<?php echo esc_attr( $humainbox_token ); ?>">
-							</th>
-							<td>
-								<strong><?php echo esc_html( '' !== $humainbox_entry['title'] ? $humainbox_entry['title'] : $humainbox_token ); ?></strong>
-							</td>
-							<td>
-								<code><?php echo esc_html( '' !== $humainbox_entry['recipient'] ? $humainbox_entry['recipient'] : __( '(nowhere)', 'humainbox' ) ); ?></code>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
-
-			<?php submit_button( __( 'Restore selected forms', 'humainbox' ), 'secondary' ); ?>
-		</form>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
 	<?php endif; ?>
 </div>
