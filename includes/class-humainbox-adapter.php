@@ -191,7 +191,7 @@ abstract class Humainbox_Adapter {
 	/**
 	 * The separate addresses in one recipient field.
 	 *
-	 * Every one of the three plugins accepts a comma-separated list there.
+	 * Every supported form plugin accepts a comma-separated list there.
 	 *
 	 * @param string $recipient Whatever the form plugin stores.
 	 * @return string[]

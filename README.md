@@ -20,19 +20,23 @@ more expensive.
 
 ## Works with
 
-Contact Form 7, WPForms and Gravity Forms. Each has its own adapter in
-`includes/adapters/`, and they go through that plugin's public API rather than writing to
-the database directly.
+Contact Form 7, WPForms, Gravity Forms, Elementor Forms (Elementor Pro), Ninja Forms,
+Fluent Forms, Forminator and Formidable Forms. Each has its own adapter in
+`includes/adapters/`, and each writes through that plugin's own models or storage API
+rather than with SQL of its own — and, where a plugin's own save would lose something
+(backslashes, other notifications, unloaded settings), around that loss. The comment at
+the top of each adapter says what it was and how it is avoided.
 
 Some recipients can't be changed safely, and those are refused instead of overwritten.
-Contact Form 7 is the one to watch: its recipient is often dynamic —
-`[_site_admin_email]`, or a shortcode that resolves to the author of whatever listing is
-on screen. Overwrite one of those and every enquiry goes to the wrong person, on every
+Contact Form 7 is the one to watch: its recipient is often a mail tag — `[your-email]`,
+or a shortcode that resolves to the author of whatever listing is on screen. (The site's
+own admin tags, such as `[_site_admin_email]` or `{wp:admin_email}`, resolve to one fixed
+address, and those are changed.) Overwrite one of those and every enquiry goes to the wrong person, on every
 form, with nothing to tell you it happened.
 
 ## Requirements
 
-WordPress 6.2 or newer, PHP 7.4 or newer, and one of the three form plugins above.
+WordPress 6.2 or newer, PHP 7.4 or newer, and one of the form plugins above.
 
 ## Installing
 

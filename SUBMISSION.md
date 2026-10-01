@@ -88,6 +88,10 @@ being present is not the feature; the file being loaded is.
       repository, not from the plugin — shipping it would put artwork on every install
       to draw a page nobody sees from inside their dashboard.
 
+- [x] **1.1.0 adapters run against real forms (2026-10-01):** Elementor Forms (via the GPL
+      Pro Elements fork), Ninja Forms, Fluent Forms, Forminator and Formidable, in a MySQL
+      WordPress — 48 checks. SQLite cannot run their tables; use MySQL.
+
 - [ ] **Gravity Forms has still never been run.** Contact Form 7 and WPForms have.
       Gravity is paid, so it needs a licence or a trial site — and its adapter is the
       one whose write path has had the least contact with reality.
