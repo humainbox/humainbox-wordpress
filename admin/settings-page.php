@@ -244,7 +244,7 @@ foreach ( $inventory as $humainbox_group ) {
 			<?php
 			if ( empty( $humainbox_active ) ) {
 				echo esc_html__(
-					'No Contact Form 7, WPForms or Gravity Forms forms were found on this site. If your forms are built with something else, you can still protect them: paste your Humainbox address into their notification settings by hand.',
+					'No forms were found in the form plugins this version reads: Contact Form 7, WPForms, Gravity Forms, Elementor Forms, Ninja Forms, Fluent Forms, Forminator and Formidable Forms. If your forms are built with something else, you can still protect them: paste your Humainbox address into their notification settings by hand.',
 					'humainbox'
 				);
 			} else {
@@ -296,7 +296,7 @@ foreach ( $inventory as $humainbox_group ) {
 		 | screen can say which — the rest are left as they are and left unexplained.
 		 */
 		$humainbox_tag_note = function ( $recipient ) {
-			foreach ( array( '[_site_admin_email]', '{admin_email}' ) as $tag ) {
+			foreach ( array( '[_site_admin_email]', '{wp:admin_email}', '{system:admin_email}', '{wp.admin_email}', '{admin_email}', '[admin_email]' ) as $tag ) {
 				if ( false !== strpos( (string) $recipient, $tag ) ) {
 					return '<p class="description">' . esc_html(
 						sprintf(

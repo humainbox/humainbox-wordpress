@@ -41,6 +41,11 @@ class Humainbox_Forms {
 			new Humainbox_Cf7_Adapter(),
 			new Humainbox_Wpforms_Adapter(),
 			new Humainbox_Gravity_Adapter(),
+			new Humainbox_Elementor_Adapter(),
+			new Humainbox_Ninja_Adapter(),
+			new Humainbox_Fluent_Adapter(),
+			new Humainbox_Forminator_Adapter(),
+			new Humainbox_Formidable_Adapter(),
 		);
 	}
 

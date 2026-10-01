@@ -4,11 +4,11 @@ Tags: spam, anti-spam, contact form, captcha alternative, form notifications
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Stop contact form spam, including AI-written messages, without a CAPTCHA. Connects Contact Form 7, WPForms and Gravity Forms to Humainbox.
+Stop contact form spam, including AI-written messages, without a CAPTCHA. Works with Contact Form 7, WPForms, Elementor and five more form plugins.
 
 == Description ==
 
@@ -56,7 +56,7 @@ The usual fixes cost you real customers instead. A CAPTCHA makes genuine visitor
 
 = What this plugin does =
 
-* **Lists every form** from Contact Form 7, WPForms and Gravity Forms, and the address each one sends its enquiries to. This part works without an account, and warns you about any form that notifies nobody.
+* **Lists every form** from Contact Form 7, WPForms, Gravity Forms, Elementor Forms, Ninja Forms, Fluent Forms, Forminator and Formidable Forms, and the address each one sends its enquiries to. This part works without an account, and warns you about any form that notifies nobody.
 * **Points the forms you choose at Humainbox** in one action, instead of opening each form's settings one by one.
 * **Keeps the addresses it replaced** and restores them on request.
 * **Leaves alone what it should not change** — for example, the "copy of your message" email that goes back to the visitor.
@@ -76,6 +76,11 @@ It adds nothing to your pages: no scripts, no styles, no CAPTCHA, no links. It w
 * Contact Form 7
 * WPForms and WPForms Lite
 * Gravity Forms
+* Elementor Forms (Elementor Pro)
+* Ninja Forms
+* Fluent Forms
+* Forminator
+* Formidable Forms
 
 Other form plugins are not listed and are never touched. You can still connect them by pasting your Humainbox address into their notification settings by hand — the steps for each are at https://humainbox.com/integrations
 
@@ -156,9 +161,9 @@ No, only the ones that go to you. Notifications addressed to the visitor who fil
 
 If a form only has notifications like that, it is listed with the reason and cannot be selected.
 
-= Will it work with Elementor, Ninja Forms or Fluent Forms? =
+= Which form plugins does it work with? =
 
-Not in this version — those forms are not listed and never touched. You can still protect them by pasting your Humainbox address into their notification settings by hand. The steps for each are at https://humainbox.com/integrations
+Contact Form 7, WPForms (Lite and Pro), Gravity Forms, Elementor Forms, Ninja Forms, Fluent Forms, Forminator and Formidable Forms. Forms built with anything else are not listed and never touched; you can still protect them by pasting your Humainbox address into their notification settings by hand. The steps for each are at https://humainbox.com/integrations
 
 = One of my forms says it notifies nobody =
 
@@ -173,6 +178,11 @@ Then enquiries from that form are going nowhere. A form with no recipient addres
 
 == Changelog ==
 
+= 1.1.0 =
+* Five more form plugins: Elementor Forms (Elementor Pro), Ninja Forms, Fluent Forms, Forminator and Formidable Forms. Each one lists its forms, connects the notifications that go to you, and leaves the ones that go to the visitor alone.
+* Elementor forms in templates, popups and global widgets are found too, and a form that never had its recipient set is restored to following your site's admin address.
+* Disabled notifications are connected as well, so switching one back on later does not bring the old address back.
+
 = 1.0.1 =
 * The plugin is now listed as "Humainbox – AI Spam Filter for Contact Forms".
 * The forms table keeps steady column widths, so long inbox addresses and status labels no longer break across lines on smaller screens.
@@ -183,6 +193,9 @@ Then enquiries from that form are going nowhere. A form with no recipient addres
   original addresses.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Adds Elementor Forms, Ninja Forms, Fluent Forms, Forminator and Formidable Forms.
 
 = 1.0.1 =
 Layout fix for the forms table on smaller screens.

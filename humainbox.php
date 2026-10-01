@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Humainbox – AI Spam Filter for Contact Forms
  * Plugin URI:        https://humainbox.com/integrations
- * Description:       Stop contact form spam, including AI-written messages, without a CAPTCHA. Connects Contact Form 7, WPForms and Gravity Forms to Humainbox, and can put every form back.
- * Version:           1.0.1
+ * Description:       Stop contact form spam, including AI-written messages, without a CAPTCHA. Connects Contact Form 7, WPForms, Elementor and five more form plugins to Humainbox, and can put every form back.
+ * Version:           1.1.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Reaktör Teknoloji
@@ -72,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @link https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/
  */
 
-define( 'HUMAINBOX_VERSION', '1.0.1' );
+define( 'HUMAINBOX_VERSION', '1.1.0' );
 define( 'HUMAINBOX_FILE', __FILE__ );
 define( 'HUMAINBOX_PATH', plugin_dir_path( __FILE__ ) );
 
@@ -128,6 +128,11 @@ require_once HUMAINBOX_PATH . 'includes/class-humainbox-adapter.php';
 require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-cf7-adapter.php';
 require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-wpforms-adapter.php';
 require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-gravity-adapter.php';
+require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-elementor-adapter.php';
+require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-ninja-adapter.php';
+require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-fluent-adapter.php';
+require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-forminator-adapter.php';
+require_once HUMAINBOX_PATH . 'includes/adapters/class-humainbox-formidable-adapter.php';
 require_once HUMAINBOX_PATH . 'includes/class-humainbox-forms.php';
 require_once HUMAINBOX_PATH . 'includes/class-humainbox-settings.php';
 
