@@ -1,10 +1,10 @@
-=== Humainbox ===
+=== Humainbox – AI Spam Filter for Contact Forms ===
 Contributors: humainbox
 Tags: spam, anti-spam, contact form, captcha alternative, form notifications
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,7 +164,18 @@ Not in this version — those forms are not listed and never touched. You can st
 
 Then enquiries from that form are going nowhere. A form with no recipient address accepts submissions and tells no one. It is worth fixing whether or not you use Humainbox.
 
+== Screenshots ==
+
+1. Every form on your site in one table: where it sends its enquiries now, where it sent before Humainbox, and whether it is connected. Forms it must not change are explained instead of offered.
+2. What Humainbox holds back as spam, and what always reaches you.
+3. After connecting: your forms send to your Humainbox address, and real enquiries go on to your inbox.
+4. Getting started takes three steps — and the table of your forms works before you have an account.
+
 == Changelog ==
+
+= 1.0.1 =
+* The plugin is now listed as "Humainbox – AI Spam Filter for Contact Forms".
+* The forms table keeps steady column widths, so long inbox addresses and status labels no longer break across lines on smaller screens.
 
 = 1.0.0 =
 * First release: list Contact Form 7, WPForms and Gravity Forms notification recipients,
@@ -172,6 +183,9 @@ Then enquiries from that form are going nowhere. A form with no recipient addres
   original addresses.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Layout fix for the forms table on smaller screens.
 
 = 1.0.0 =
 First release.

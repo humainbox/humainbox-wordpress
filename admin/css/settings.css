@@ -218,3 +218,22 @@
 
 /* Connect and restore, side by side under the tables they act on. */
 .humainbox-actions .button + .button { margin-left: .5em; }
+
+/* ── The forms table ───────────────────────────────────────────────────────────
+   ⚠️ FIXED COLUMNS. With automatic layout every table sized itself to its own
+   content: the CF7 and WPForms tables had different columns, an inbox address
+   broke mid-word ("northfield- / k3x9…") and "Cannot change here" wrapped onto two
+   lines on any screen narrower than a wide monitor. */
+.humainbox-forms { table-layout: fixed; }
+/* The form column takes what is left; the status column is sized to its longest
+   label ("Cannot change here") so it can never be the one that gets squeezed. */
+.humainbox-forms thead th:nth-child(3) { width: 30%; }
+.humainbox-forms thead th:nth-child(4) { width: 25%; }
+.humainbox-forms thead th:nth-child(5) { width: 11.5em; }
+.humainbox-forms td:last-child { white-space: nowrap; }
+.humainbox-forms code { font-size: 12px; overflow-wrap: anywhere; }
+
+@media screen and (max-width: 782px) {
+	.humainbox-forms { table-layout: auto; }
+	.humainbox-forms td:last-child { white-space: normal; }
+}

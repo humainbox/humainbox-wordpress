@@ -1,0 +1,82 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.bunny.net/css?family=bitter:600|ibm-plex-mono:400,500|inter:400,500,600&display=block" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 772px; height: 250px; overflow: hidden; }
+  body {
+    position: relative;
+    font-family: Inter, sans-serif;
+    color: #1c1917;
+    /* The site's wash-tint, the ground of its own hero. */
+    background: linear-gradient(165deg, rgba(47,129,125,0.12) 0%, #f2f0ec 50%, #e9e6e0 100%);
+  }
+  body::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #236866; }
+
+  .brand { position: absolute; left: 44px; top: 36px; width: 360px; }
+  .lockup { display: flex; align-items: center; gap: 14px; }
+  .lockup svg { flex: 0 0 auto; }
+  .word { font-family: Bitter, serif; font-weight: 600; font-size: 30px; letter-spacing: -0.01em; color: #1c1917; }
+  .tag { margin-top: 16px; font-size: 21px; line-height: 1.25; font-weight: 600; color: #1c1917; letter-spacing: -0.01em; }
+  .sub { margin-top: 8px; font-size: 14px; line-height: 1.45; color: #57534e; }
+  .sub em { font-style: normal; font-weight: 500; color: #236866; }
+    .meta { margin-top: 13px; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: #78716c; letter-spacing: 0.02em; }
+  .meta b { font-weight: 500; color: #57534e; }
+
+  .card {
+    position: absolute; width: 300px; padding: 11px 14px 10px;
+    background: #fff; border: 1px solid #e7e5e4; border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(28,25,23,.04), 0 10px 28px rgba(28,25,23,.08);
+  }
+  .card .row { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .subject { margin-top: 7px; font-size: 13.5px; font-weight: 500; color: #1c1917; }
+  .from { margin-top: 2px; font-size: 11.5px; color: #78716c; }
+  .why { margin-top: 8px; padding-top: 7px; border-top: 1px solid #f0eeec; font-family: "IBM Plex Mono", monospace; font-size: 10px; color: #78716c; }
+
+  .held { left: 418px; top: 14px; }
+  .held .row { color: #a16207; }
+  .held .dot { background: #dba617; }
+  .held .subject { color: #57534e; }
+
+  .through { left: 450px; top: 128px; border-color: #aed8d3; }
+  .through .row { color: #1e5453; }
+  .through .dot { background: #2f817d; }
+</style></head>
+<body>
+  <div class="brand">
+    <div class="lockup">
+      <svg width="46" height="46" viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="#C9C1B3">
+          <circle cx="34" cy="18" r="3.8"/><circle cx="50" cy="18" r="3.8"/><circle cx="66" cy="18" r="3.8"/>
+          <circle cx="18" cy="34" r="3.8"/><circle cx="34" cy="34" r="3.8"/><circle cx="66" cy="34" r="3.8"/><circle cx="82" cy="34" r="3.8"/>
+          <circle cx="18" cy="50" r="3.8"/><circle cx="34" cy="50" r="3.8"/><circle cx="50" cy="50" r="3.8"/><circle cx="66" cy="50" r="3.8"/><circle cx="82" cy="50" r="3.8"/>
+          <circle cx="18" cy="66" r="3.8"/><circle cx="82" cy="66" r="3.8"/>
+        </g>
+        <g fill="#236866">
+          <circle cx="50" cy="34" r="6.8"/>
+          <circle cx="34" cy="66" r="6.8"/><circle cx="50" cy="66" r="6.8"/><circle cx="66" cy="66" r="6.8"/>
+          <circle cx="34" cy="82" r="6.8"/><circle cx="50" cy="82" r="6.8"/><circle cx="66" cy="82" r="6.8"/>
+        </g>
+      </svg>
+      <span class="word">Humainbox</span>
+    </div>
+    <p class="tag">A spam filter for your contact forms</p>
+    <p class="sub">Catches the <em>AI-written spam</em> that CAPTCHAs miss.<br>Real enquiries still reach you.</p>
+    <p class="meta"><b>No CAPTCHA</b> · nothing deleted · free plan</p>
+  </div>
+
+  <div class="card held">
+    <div class="row"><span class="dot"></span>HELD AS SPAM</div>
+    <p class="subject">Boost your Google ranking in 30 days</p>
+    <p class="from">Sent to thousands of sites, written by AI</p>
+    <p class="why">held · 74 over a threshold of 60</p>
+  </div>
+
+  <div class="card through">
+    <div class="row"><span class="dot"></span>DELIVERED TO YOU</div>
+    <p class="subject">Quote for a three-room renovation</p>
+    <p class="from">Reply goes straight to the visitor</p>
+    <p class="why">delivered · real enquiry</p>
+  </div>
+</body></html>

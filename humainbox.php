@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       Humainbox
+ * Plugin Name:       Humainbox – AI Spam Filter for Contact Forms
  * Plugin URI:        https://humainbox.com/integrations
  * Description:       Stop contact form spam, including AI-written messages, without a CAPTCHA. Connects Contact Form 7, WPForms and Gravity Forms to Humainbox, and can put every form back.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Reaktör Teknoloji
@@ -72,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @link https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/
  */
 
-define( 'HUMAINBOX_VERSION', '1.0.0' );
+define( 'HUMAINBOX_VERSION', '1.0.1' );
 define( 'HUMAINBOX_FILE', __FILE__ );
 define( 'HUMAINBOX_PATH', plugin_dir_path( __FILE__ ) );
 
